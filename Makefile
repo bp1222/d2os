@@ -4,11 +4,13 @@ AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 
 INCLUDE_DIR="-I$(shell pwd)"
-CFLAGS=-O2 -Wall -nostdlib -nostartfiles $(INCLUDE_DIR)
+CFLAGS=-O2 -g -Wall $(INCLUDE_DIR)
+LDFLAGS=-lgcc -nostartfiles
 
 all : kernel
 
-OBJ = kernel.o \
+OBJ = printf.o \
+	  kernel.o \
       boot/boot.o \
 	  drivers/uart/uart.o
 
@@ -26,5 +28,5 @@ clean:
 	rm -f kernel.img
 
 kernel: $(OBJ)
-	$(LD) -T linker.ld -o kernel.elf $(OBJ)
+	$(CC) $(LDFLAGS) -T linker.ld -o kernel.elf $(OBJ)
 	$(OBJCOPY) kernel.elf -O binary kernel.img
