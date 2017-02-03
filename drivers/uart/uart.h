@@ -4,7 +4,7 @@
 
 #define UART0_BASE  0x20201000
 
-typedef struct _uart_registers {
+typedef struct {
     uint32_t DR;
     uint32_t RSRECR;
     uint32_t reserved_0x08[4];
@@ -26,9 +26,9 @@ typedef struct _uart_registers {
     uint32_t ITIP;
     uint32_t ITOP;
     uint32_t TDR;
-} uart_registers;
+} uart_registers_t;
 
-extern volatile uart_registers *uart_reg;
+extern volatile uart_registers_t *uart_reg;
 
 void uart_init(void);
 void uart_putc(const char byte);

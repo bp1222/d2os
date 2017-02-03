@@ -18,6 +18,15 @@
 
 #define GPLEV0    (GPIO_BASE + 0x34)
 
+#define GPEDS0    (GPIO_BASE + 0x40)
+#define GPEDS1    (GPIO_BASE + 0x44)
+
+#define GPFEN0    (GPIO_BASE + 0x58)
+#define GPFEN1    (GPIO_BASE + 0x5C)
+
+#define GPLEN0    (GPIO_BASE + 0x70)
+#define GPLEN1    (GPIO_BASE + 0x74)
+
 #define GPPUD     (GPIO_BASE + 0x94)
 #define GPPUDCLK0 (GPIO_BASE + 0x98)
 #define GPPUDCLK1 (GPIO_BASE + 0x9C)
@@ -27,7 +36,7 @@ inline void gpio_set_register(uint32_t reg, uint32_t set)
     *(volatile uint32_t*)reg = set;
 }
 
-inline void gpio_set_register_bits(uint32_t reg, uint32_t set)
+inline void gpio_set_register_bit(uint32_t reg, uint32_t set)
 {
     *(volatile uint32_t*)reg |= set;
 }
@@ -37,8 +46,4 @@ inline uint32_t gpio_get_register(uint32_t reg)
     return *(volatile uint32_t*)reg;
 }
 
-inline uint32_t gpio_get_register_bit(uint32_t reg, uint32_t bit)
-{
-    return (*(volatile uint32_t*)reg & (1 << bit)) >> bit;
-}
 #endif

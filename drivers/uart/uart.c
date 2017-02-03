@@ -10,7 +10,7 @@ size_t strlen(const char* str)
     return ret;
 }
 
-volatile uart_registers *uart_reg = (volatile uart_registers *)UART0_BASE;
+volatile uart_registers_t *uart_reg = (volatile uart_registers_t *)UART0_BASE;
 
 void uart_init(void)
 {
