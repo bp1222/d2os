@@ -3,7 +3,7 @@
 
 #define GPIO_BASE 0x20200000
 
-#define GPFSEL0   (GPIO_BASE + 0x00)
+#define GPFSEL0   (GPIO_BASE)
 #define GPFSEL1   (GPIO_BASE + 0x04)
 #define GPFSEL2   (GPIO_BASE + 0x08)
 #define GPFSEL3   (GPIO_BASE + 0x0C)
@@ -31,19 +31,46 @@
 #define GPPUDCLK0 (GPIO_BASE + 0x98)
 #define GPPUDCLK1 (GPIO_BASE + 0x9C)
 
-inline void gpio_set_register(uint32_t reg, uint32_t set)
-{
-    *(volatile uint32_t*)reg = set;
+#define GPIO_REG(r) ((volatile uint32_t*)r)
+
+#define GET_GPFSEL(reg, pin) {                  \
+    switch(pin / 10) {                          \
+        case 0:                                 \
+            reg = GPIO_REG(GPFSEL0);            \
+            break;                              \
+        case 1:                                 \
+            reg = GPIO_REG(GPFSEL1);            \
+            break;                              \
+        case 2:                                 \
+            reg = GPIO_REG(GPFSEL2);            \
+            break;                              \
+    }                                           \
 }
 
-inline void gpio_set_register_bit(uint32_t reg, uint32_t set)
-{
-    *(volatile uint32_t*)reg |= set;
+#define SET_INPUT_PIN(pin) {                    \
+    volatile uint32_t *reg;                     \
+    GET_GPFSEL(reg, pin);                       \
+    *reg |= (0b000 << ((pin % 10) * 3));        \
 }
 
-inline uint32_t gpio_get_register(uint32_t reg)
-{
-    return *(volatile uint32_t*)reg;
+#define SET_OUTPUT_PIN(pin) {                   \
+    volatile uint32_t *reg;                     \
+    GET_GPFSEL(reg, pin);                       \
+    *reg |= (0b001 << ((pin % 10) * 3));        \
+}
+
+
+#define PULL_DISABLE 0x00000000
+#define PULL_DOWN    0x00000001
+#define PULL_UP      0x00000002
+
+#define SET_PIN_PULL(type, pin) {               \
+    *GPIO_REG(GPPUD) = type;                    \
+    delay(150);                                 \
+    *GPIO_REG(GPPUDCLK0) |= (1 << pin);         \
+    delay(150);                                 \
+    *GPIO_REG(GPPUD) = 0x00000000;              \
+    *GPIO_REG(GPPUDCLK0) = 0x00000000;          \
 }
 
 #endif

@@ -101,9 +101,44 @@ static void putchw(void* putp, putcf putf, int n, char z, char* bf)
         putf(putp,ch);
 }
 
+static void putbin(unsigned int val, char* buff, int sz)
+{
+    int spaceing = 0;
+    char *pbuff = buff;
+
+    /* Must be able to store one character at least. */
+    if (sz < 1) return;
+
+    /* Special case for zero to ensure some output. */
+    if (val == 0) {
+        *pbuff++ = '0';
+        *pbuff = '\0';
+        return;
+    }
+
+    /* Work from the end of the buffer back. */
+    pbuff += sz + (sz / 4);
+    *pbuff-- = '\0';
+
+    /* For each bit (going backwards) store character. */
+    while (val != 0) {
+        if (sz-- == 0) return;
+        *pbuff-- = ((val & 1) == 1) ? '1' : '0';
+
+        if (spaceing++ == 3) {
+            spaceing = 0;
+            *pbuff-- = ' ';
+        }
+
+        /* Get next bit. */
+        val >>= 1;
+    }
+}
+
 void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
 {
     char bf[12];
+    char buf[32] = {};
 
     char ch;
 
@@ -124,6 +159,10 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
             switch (ch) {
                 case 0 :
                     goto abort;
+                case 'b':
+                    putbin(va_arg(va, unsigned int), buf, 32);
+                    putchw(putp, putf, w, 0, buf);
+                    break;
                 case 'u' :
                     ui2a(va_arg(va, unsigned int),10,0,bf);
                     putchw(putp,putf,w,lz,bf);

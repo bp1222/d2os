@@ -13,12 +13,12 @@ extern void printf_putc (void* p, char c)
     uart_putc(c);
 }
 
-void set_led(uint32_t state)
+void toggle_led(uint32_t pin)
 {
-    if (state) {
-        gpio_set_register_bit(GPSET0, (1<<24));
+    if (!(*GPIO_REG(GPLEV0) & (1 << pin))) {
+        *GPIO_REG(GPSET0) |= (1 << pin);
     } else {
-        gpio_set_register_bit(GPCLR0, (1<<24));
+        *GPIO_REG(GPCLR0) |= (1 << pin);
     }
 }
 
@@ -33,13 +33,14 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 
     printf("Welcome to D2os!\n\r");
 
-    // Set GPIO 24 for output LED
-    gpio_set_register_bit(GPFSEL2, (0 << 14) | (0 << 13) | (1 << 12));
+    // Set GPIO 25 for output LED
+    SET_OUTPUT_PIN(25);
 
     // Set GPIO 23 for input button
-    gpio_set_register_bit(GPFSEL2, (0 << 9) | (0 << 10) | (1 << 11));
-    gpio_set_register_bit(GPFEN0, (1 << 23));
-    gpio_set_register_bit(GPEDS0, (1 << 23));
+    SET_INPUT_PIN(23);
+    SET_PIN_PULL(PULL_UP, 23);
+    *GPIO_REG(GPFEN0) |= (1 << 23);
+    *GPIO_REG(GPEDS0) |= (1 << 23);
 
     irq_registers->Enable_IRQs_2 |= (1 << 17);
 
@@ -47,30 +48,11 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 
     while (1)
         ;
-    /*
-    // Set our button and led pins
-    gpio_set_register(GPPUD, (1<<1));
-    delay(150);
-
-    gpio_set_register(GPPUDCLK0, (1<<23));
-    delay(150);
-
-    gpio_set_register(GPPUD, 0x00000000);
-    gpio_set_register(GPPUDCLK0, 0x00000000);
-
-    while (1) {
-        if (!gpio_get_register_bit(GPLEV0, 23)) {
-        } else {
-            set_led(0);
-        }
-    }
-    */
 }
 
-void __attribute__ ((interrupt ("IRQ"))) irq_handler (void) {
-    if (gpio_get_register(GPEDS0) & (1 << 23)) {
-        gpio_set_register_bit(GPEDS0, (1 << 23));
-        printf("hello\n\r");
-        set_led(!(gpio_get_register(GPLEV0) & (1 << 24)));
+void __attribute__((interrupt ("IRQ"))) irq_handler (void) {
+    if (*GPIO_REG(GPEDS0) & (1 << 23)) {
+        *GPIO_REG(GPEDS0) |= (1 << 23);
+        toggle_led(25);
     }
 }

@@ -17,17 +17,8 @@ void uart_init(void)
     // Disable UART0.
     uart_reg->CR = 0x00000000;
 
-    // Setup the GPIO pin 14 && 15.
-    // Disable pull up/down for all GPIO pins & delay for 150 cycles.
-    gpio_set_register(GPPUD, 0x00000000);
-    delay(150);
-
-    // Disable pull up/down for pin 14,15 & delay for 150 cycles.
-    gpio_set_register(GPPUDCLK0, (1 << 14) | (1 << 15));
-    delay(150);
-
-    // Write 0 to GPPUDCLK0 to make it take effect.
-    gpio_set_register(GPPUDCLK0, 0x00000000);
+    SET_PIN_PULL(PULL_DISABLE, 14);
+    SET_PIN_PULL(PULL_DISABLE, 15);
 
     // Clear pending interrupts.
     uart_reg->ICR = 0x000007FF;
