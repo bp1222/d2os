@@ -1,8 +1,11 @@
 #ifndef __UART_H__
 #define __UART_H__
-#include <include/kernel.h>
+#include "../../kernel.h"
 
-#define UART0_BASE  0x20201000
+#define BASE				0x3F000000UL
+
+#define AUX_BASE    (BASE + 0x215000)
+#define UART0_BASE  (BASE + 0x201000)
 
 typedef struct {
     uint32_t DR;

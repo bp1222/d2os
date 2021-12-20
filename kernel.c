@@ -1,8 +1,8 @@
-#include <include/kernel.h>
-#include <include/interrupt.h>
-#include <include/printf.h>
-#include <drivers/uart/uart.h>
-#include <drivers/gpio/gpio.h>
+#include "kernel.h"
+#include "interrupt.h"
+#include "printf.h"
+#include "drivers/uart/uart.h"
+#include "drivers/gpio/gpio.h"
 
 void _enable_interrupts();
 
@@ -32,6 +32,13 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
     uart_init();
 
     printf("Welcome to D2os!\n\r");
+		uart_putc('H');
+		uart_putc('e');
+		uart_putc('l');
+		uart_putc('l');
+		uart_putc('o');
+		while(1) ;
+
 
     // Set GPIO 25 for output LED
     SET_OUTPUT_PIN(25);
@@ -55,4 +62,9 @@ void __attribute__((interrupt ("IRQ"))) irq_handler (void) {
         *GPIO_REG(GPEDS0) |= (1 << 23);
         toggle_led(25);
     }
+}
+
+void delay(int count) {
+    asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+        : "=r"(count): [count]"0"(count) : "cc");
 }

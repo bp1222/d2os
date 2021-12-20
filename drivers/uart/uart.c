@@ -1,6 +1,6 @@
-#include <include/kernel.h>
-#include <drivers/uart/uart.h>
-#include <drivers/gpio/gpio.h>
+#include "../../kernel.h"
+#include "uart.h"
+#include "../gpio/gpio.h"
 
 size_t strlen(const char* str)
 {
