@@ -13,7 +13,7 @@
 // Go and read and absorb this quite excellent startup code. It's really nice:
 // https://github.com/LdB-ECM/Raspberry-Pi/blob/master/SD_FAT32/SmartStart32.S
 
-.section ".text.startup"
+.section ".text.boot"
 
 .global _start
 .global _get_stack_pointer
@@ -61,8 +61,8 @@
 .equ    SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
 .equ    SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 
-#define PRESCALER_2711	0xff800008
-#define MBOX_2711	0xff8000cc
+.code	32
+.align	2
 
 // At the start address we have a "jump table", specifically laid out to allow jump to an address that is stored in
 // memory. This table must be laid out exactly as shown (including the instruction ldr pc,)
@@ -102,7 +102,7 @@ _reset_:
     mrs r12, CPSR
     and r12, #CPSR_MODE_MASK    // Zero all bits except the CPSR_MODE_MASK bits to be left with the mode value in r11
 
-    // Store the CPSR start mode in a "global variable" that is accessible to all (including the C world)
+    // Store the CPSR start mode in a ":lobal variable" that is accessible to all (including the C world)
     ldr r11, =_cpsr_startup_mode
     str r12, [r11]
 
@@ -130,8 +130,6 @@ _reset_:
     msr SPSR_cxsf, r12
 
     add lr, pc, #4
-#    .word 0xE12EF30E
-#    .word 0xE160006E
 
 _multicore_park:
     // On RPI2/3 make sure all cores that are not core 0 branch off to an infinite loop to make them enter a spinlock
@@ -141,66 +139,58 @@ _multicore_park:
     bne _inf_loop
 
 _setup_interrupt_table:
-
-    mov     r0, #0x8000
-    mov     r1, #0x0000
-    ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}
-    stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}
-    ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}
-    stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}
+    // Preserve r0, r1, r2 for kernel
+    mov     r3, #0x8000
+    mov     r4, #0x0000
+    
+    ldmia   r3!,{r5, r6, r7, r8, r9, r10, r11, r12}
+    stmia   r4!,{r5, r6, r7, r8, r9, r10, r11, r12}
+    ldmia   r3!,{r5, r6, r7, r8, r9, r10, r11, r12}
+    stmia   r4!,{r5, r6, r7, r8, r9, r10, r11, r12}
 
     // We're going to use interrupt mode, so setup the interrupt mode
     // stack pointer which differs to the application stack pointer:
-    mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r0
-    ldr sp, =0x7000
+    mov r3, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r3
+    ldr sp, =0x4000
 
     // Switch back to supervisor mode (our application mode) and
     // set the stack pointer. Remember that the stack works its way
     // down memory, our heap will work it's way up from after the
     // application.
-    mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r0
+    mov r3, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r3
     ldr sp, =0x8000
 
-    // Enable L1 Cache -------------------------------------------------------
-
-    // R0 = System Control Register
-    mrc p15,0,r0,c1,c0,0
-
+    // Enable L1 Cache
+    // R3 = System Control Register
+    mrc p15,#0,r3,c1,c0,#0
     // Enable caches and branch prediction
-    orr r0,#SCTLR_ENABLE_BRANCH_PREDICTION
-    orr r0,#SCTLR_ENABLE_DATA_CACHE
-    orr r0,#SCTLR_ENABLE_INSTRUCTION_CACHE
+    orr r3,#SCTLR_ENABLE_BRANCH_PREDICTION
+    orr r3,#SCTLR_ENABLE_DATA_CACHE
+    orr r3,#SCTLR_ENABLE_INSTRUCTION_CACHE
+    // System Control Register = R3
+    mcr p15,0,r3,c1,c0,0
 
-    // System Control Register = R0
-    mcr p15,0,r0,c1,c0,0
-
-    // Enable VFP ------------------------------------------------------------
-
-    // r1 = Access Control Register
-    MRC p15, #0, r1, c1, c0, #2
+    // Enable VFP 
+    // r3 = Access Control Register
+    mrc p15,#0,r3,c1,c0,#2
     // enable full access for p10,11
-    ORR r1, r1, #(0xf << 20)
-    // Access Control Register = r1
-    MCR p15, #0, r1, c1, c0, #2
-    MOV r1, #0
-    // flush prefetch buffer because of FMXR below
-    MCR p15, #0, r1, c7, c5, #4
-    // and CP 10 & 11 were only just enabled
-    // Enable VFP itself
-    MOV r0,#0x40000000
-    // FPEXC = r0
-    FMXR FPEXC, r0
+    orr r3, r3, #(0xf << 20)
+    // Access Control Register = r3
+    mcr p15,#0,r3,c1,c0,#2
+    // Set FPEXC EN bit
+    mov r3,#0x40000000
+    // fpexc = r3
+    vmsr fpexc, r3
 
-    // The c-startup function which we never return from. This function will
-    // initialise the ro data section (most things that have the const
-    // declaration) and initialise the bss section variables to 0 (generally
-    // known as automatics). It'll then call main, which should never return.
+    // Handoff to C
     bl _cstartup
 
     // If main does return for some reason, just catch it and stay here.
+.global _inf_loop
 _inf_loop:
+    wfi
     b _inf_loop
 
 
@@ -208,7 +198,7 @@ _inf_loop:
 _cpsr_startup_mode:  .word    0x0
 _osc:                .word    54000000
 _value:              .word    0x63fff
-#_mbox:               .word    MBOX_2711
+_mbox:               .word    0xff8000cc
 
 _get_stack_pointer:
     // Return the stack pointer value

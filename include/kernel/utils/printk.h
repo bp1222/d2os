@@ -1,5 +1,5 @@
 /*
- * File: printf.h
+ * File: printk.h
  *
  *  Copyright (c) 2004,2012 Kustaa Nyholm / SpareTimeLabs
  *
@@ -32,9 +32,9 @@
  *
  *   ----------------------------------------------------------------------
  *
- *   This library is realy just two files: 'printf.h' and 'printf.c'.
+ *   This library is realy just two files: 'printk.h' and 'printk.c'.
  *
- *   They provide a simple and small (+200 loc) printf functionality to
+ *   They provide a simple and small (+200 loc) printk functionality to
  *   be used in embedded systems.
  *
  *   I've found them so usefull in debugging that I do not bother with a
@@ -43,7 +43,7 @@
  *   They are distributed in source form, so to use them, just compile them
  *   into your project.
  *
- *   Two printf variants are provided: printf and sprintf.
+ *   Two printk variants are provided: printk and sprintk.
  *
  *   The formats supported by this implementation are: 'd' 'u' 'c' 's' 'x' 'X'.
  *
@@ -62,7 +62,7 @@
  *   functionality and flexibility versus  code size is close to optimal for
  *   many embedded systems.
  *
- *   To use the printf you need to supply your own character output function,
+ *   To use the printk you need to supply your own character output function,
  *   something like :
  *
  *   void putc ( void* p, char c)
@@ -71,25 +71,25 @@
  *       SERIAL_PORT_TX_REGISTER = c;
  *   }
  *
- *   Before you can call printf you need to initialize it to use your
+ *   Before you can call printk you need to initialize it to use your
  *   character output function with something like:
  *
- *   init_printf(NULL,putc);
+ *   init_printk(NULL,putc);
  *
- *   Notice the 'NULL' in 'init_printf' and the parameter 'void* p' in 'putc',
- *   the NULL (or any pointer) you pass into the 'init_printf' will eventually be
+ *   Notice the 'NULL' in 'init_printk' and the parameter 'void* p' in 'putc',
+ *   the NULL (or any pointer) you pass into the 'init_printk' will eventually be
  *   passed to your 'putc' routine. This allows you to pass some storage space (or
  *   anything realy) to the character output function, if necessary.
  *   This is not often needed but it was implemented like that because it made
- *   implementing the sprintf function so neat (look at the source code).
+ *   implementing the sprintk function so neat (look at the source code).
  *
- *   The code is re-entrant, except for the 'init_printf' function, so it
+ *   The code is re-entrant, except for the 'init_printk' function, so it
  *   is safe to call it from interupts too, although this may result in mixed output.
  *   If you rely on re-entrancy, take care that your 'putc' function is re-entrant!
  *
- *   The printf and sprintf functions are actually macros that translate to
- *   'tfp_printf' and 'tfp_sprintf'. This makes it possible
- *   to use them along with 'stdio.h' printf's in a single source file.
+ *   The printk and sprintk functions are actually macros that translate to
+ *   'tfp_printk' and 'tfp_sprintk'. This makes it possible
+ *   to use them along with 'stdio.h' printk's in a single source file.
  *   You just need to undef the names before you include the 'stdio.h'.
  *   Note that these are not function like macros, so if you have variables
  *   or struct members with these names, things will explode in your face.
@@ -107,15 +107,15 @@
 
 #include <stdarg.h>
 
-void init_printf(void* putp, void (*putf) (void*,char));
+void init_printk(void* putp, void (*putf) (void*,char));
 
-void tfp_printf(char *fmt, ...);
-void tfp_sprintf(char* s, char *fmt, ...);
+void tfp_printk(char *fmt, ...);
+void tfp_sprintk(char* s, char *fmt, ...);
 
 void tfp_format(void* putp, void (*putf) (void*,char), char *fmt, va_list va);
 
-#define printf tfp_printf
-#define sprintf tfp_sprintf
+#define printk tfp_printk
+#define sprintk tfp_sprintk
 
 #endif
 

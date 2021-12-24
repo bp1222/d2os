@@ -31,18 +31,19 @@
 #define GPPUDCLK0 (GPIO_BASE + 0x98)
 #define GPPUDCLK1 (GPIO_BASE + 0x9C)
 
-#define GPIO_REG(r) ((volatile uint32_t*)r)
+#define GPIO_REG(r)    *(volatile uint32_t*)r
+#define GPIO_REG_PTR(r) (volatile uint32_t*)r
 
 #define GET_GPFSEL(reg, pin) {                  \
     switch(pin / 10) {                          \
         case 0:                                 \
-            reg = GPIO_REG(GPFSEL0);            \
+            reg = GPIO_REG_PTR(GPFSEL0);        \
             break;                              \
         case 1:                                 \
-            reg = GPIO_REG(GPFSEL1);            \
+            reg = GPIO_REG_PTR(GPFSEL1);        \
             break;                              \
         case 2:                                 \
-            reg = GPIO_REG(GPFSEL2);            \
+            reg = GPIO_REG_PTR(GPFSEL2);        \
             break;                              \
     }                                           \
 }
@@ -65,12 +66,12 @@
 #define PULL_UP      0x00000002
 
 #define SET_PIN_PULL(type, pin) {               \
-    *GPIO_REG(GPPUD) = type;                    \
+    GPIO_REG(GPPUD) = type;                     \
     delay(150);                                 \
-    *GPIO_REG(GPPUDCLK0) |= (1 << pin);         \
+    GPIO_REG(GPPUDCLK0) |= (1 << pin);          \
     delay(150);                                 \
-    *GPIO_REG(GPPUD) = 0x00000000;              \
-    *GPIO_REG(GPPUDCLK0) = 0x00000000;          \
+    GPIO_REG(GPPUD) = 0x00000000;               \
+    GPIO_REG(GPPUDCLK0) = 0x00000000;           \
 }
 
 #endif

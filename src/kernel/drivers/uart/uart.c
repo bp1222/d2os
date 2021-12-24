@@ -1,19 +1,25 @@
-#include "../../kernel.h"
-#include "uart.h"
-#include "../gpio/gpio.h"
+#include <kernel/kernel.h>
+#include <kernel/utils/printk.h>
+#include <kernel/drivers/gpio/gpio.h>
+#include <kernel/drivers/uart/uart.h>
 
-size_t strlen(const char* str)
+static volatile uart_registers_t *uart_reg = (volatile uart_registers_t *)UART0_BASE;
+
+static void printk_putc(void *p, char c)
 {
+    uart_putc(c);
+}
+
+size_t strlen(const char* str) {
     size_t ret = 0;
     while ( str[ret] != 0x0 )
         ret++;
     return ret;
 }
 
-volatile uart_registers_t *uart_reg = (volatile uart_registers_t *)UART0_BASE;
+void uart_init(void) {
+    init_printk(NULL, printk_putc);
 
-void uart_init(void)
-{
     // Disable UART0.
     uart_reg->CR = 0x00000000;
 

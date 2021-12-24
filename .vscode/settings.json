@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "kernel.h": "c"
+        "kernel.h": "c",
+        "atags.h": "c",
+        "uart.h": "c",
+        "printk.h": "c"
     }
 }

@@ -31,8 +31,6 @@ typedef struct {
     uint32_t TDR;
 } uart_registers_t;
 
-extern volatile uart_registers_t *uart_reg;
-
 void uart_init(void);
 void uart_putc(const char byte);
 char uart_getc();

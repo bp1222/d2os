@@ -29,7 +29,7 @@
  * OF SUCH DAMAGE.
  */
 
-#include "printf.h"
+#include <kernel/utils/printk.h>
 
 typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
@@ -103,7 +103,6 @@ static void putchw(void* putp, putcf putf, int n, char z, char* bf)
 
 static void putbin(unsigned int val, char* buff, int sz)
 {
-    int spaceing = 0;
     char *pbuff = buff;
 
     /* Must be able to store one character at least. */
@@ -117,20 +116,11 @@ static void putbin(unsigned int val, char* buff, int sz)
     }
 
     /* Work from the end of the buffer back. */
-    pbuff += sz + (sz / 4);
-    *pbuff-- = '\0';
+    pbuff += sz - 1;
 
     /* For each bit (going backwards) store character. */
-    while (val != 0) {
-        if (sz-- == 0) return;
+    while (sz-- > 0) {
         *pbuff-- = ((val & 1) == 1) ? '1' : '0';
-
-        if (spaceing++ == 3) {
-            spaceing = 0;
-            *pbuff-- = ' ';
-        }
-
-        /* Get next bit. */
         val >>= 1;
     }
 }
@@ -191,13 +181,13 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
 abort:;
 }
 
-void init_printf(void* putp, void (*putf) (void*,char))
+void init_printk(void* putp, void (*putf) (void*,char))
 {
     stdout_putf=putf;
     stdout_putp=putp;
 }
 
-void tfp_printf(char *fmt, ...)
+void tfp_printk(char *fmt, ...)
 {
     va_list va;
     va_start(va,fmt);
@@ -210,7 +200,7 @@ static void putcp(void* p,char c)
     *(*((char**)p))++ = c;
 }
 
-void tfp_sprintf(char* s,char *fmt, ...)
+void tfp_sprintk(char* s,char *fmt, ...)
 {
     va_list va;
     va_start(va,fmt);
