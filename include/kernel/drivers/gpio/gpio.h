@@ -65,10 +65,10 @@
 #define PULL_DOWN    0x00000001
 #define PULL_UP      0x00000002
 
-#define SET_PIN_PULL(type, pin) {               \
+#define SET_PINS_PULL(type, pins) {             \
     GPIO_REG(GPPUD) = type;                     \
     delay(150);                                 \
-    GPIO_REG(GPPUDCLK0) |= (1 << pin);          \
+    GPIO_REG(GPPUDCLK0) |= pins;                \
     delay(150);                                 \
     GPIO_REG(GPPUD) = 0x00000000;               \
     GPIO_REG(GPPUDCLK0) = 0x00000000;           \

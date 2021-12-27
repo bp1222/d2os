@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <stddef.h>
+
 #include <kernel/kernel.h>
 #include <kernel/utils/printk.h>
 #include <kernel/drivers/gpio/gpio.h>
@@ -10,59 +13,57 @@ static void printk_putc(void *p, char c)
     uart_putc(c);
 }
 
-size_t strlen(const char* str) {
-    size_t ret = 0;
-    while ( str[ret] != 0x0 )
-        ret++;
-    return ret;
-}
-
-void uart_init(void) {
-    init_printk(NULL, printk_putc);
-
+void uart_init(void)
+{
     // Disable UART0.
-    uart_reg->CR = 0x00000000;
+    uart_reg->CR = 0x0;
 
-    SET_PIN_PULL(PULL_DISABLE, 14);
-    SET_PIN_PULL(PULL_DISABLE, 15);
+    // Disable the UART Pins
+    SET_PINS_PULL(PULL_DISABLE, (1 << 14) | (1 << 15));
 
     // Clear pending interrupts.
-    uart_reg->ICR = 0x000007FF;
+    uart_reg->ICR = 0x7FF;
 
     // Enable FIFO & 8 bit data transmissio (1 stop bit, no parity).
-    uart_reg->LCRH = (1 << 1) | (1 << 2) | (1 << 5) | (1 << 6);
+    uart_reg->LCRH = UART0_LCRH_PEN |
+                     UART0_LCRH_FEN |
+                     UART0_LCRH_WLEN_8BIT;
 
     // Mask all interrupts.
-    uart_reg->IMSC = (1 << 1) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10);
+    uart_reg->IMSC = 0x0;
 
     // Enable UART0, receive & transfer part of UART.
-    uart_reg->CR = (1 << 0) | (1 << 8) | (1 << 9) | (1 << 14);
+    uart_reg->CR = UART0_CR_UARTEN |
+                   UART0_CR_TXE |
+                   UART0_CR_RXE |
+                   UART0_CR_RTSEN;
+
+    // Set the output for printk
+    init_printk(NULL, printk_putc);
 }
 
 void uart_putc(const char byte)
 {
-    if (byte) {
-        // Wait for UART to become ready to transmit.
-        while (uart_reg->FR & (1 << 5)) {}
+    if (byte)
+    {
+        while (uart_reg->FR & UART0_FR_TXFF)
+            ;
         uart_reg->DR = byte;
     }
 }
 
-void uart_write(const char* buffer, size_t size)
+void uart_write(const char *buffer, size_t size)
 {
-    for ( size_t i = 0; i < size; i++ )
+    for (size_t i = 0; i < size; i++)
+    {
         uart_putc(buffer[i]);
-}
-
-void uart_puts(const char* str)
-{
-    uart_write((const char*) str, strlen(str));
+    }
 }
 
 char uart_getc()
 {
-    // Wait for UART to have recieved something.
-    if (uart_reg->FR & (1 << 4)) {
+    if (uart_reg->FR & UART0_FR_RXFE)
+    {
         return uart_reg->DR;
     }
 

@@ -80,7 +80,7 @@ void atags_dump(uint32_t *atags)
         case ATAG_CMDLINE:
             cmdline = (char *)(&tags[2]);
             length = strlen(cmdline);
-            printk("  Commandline (%d): ", length);
+            printk("  COMMANDLINE (%d): ", length);
 
             /* Get around 256 char printk limit */
             count = 0;

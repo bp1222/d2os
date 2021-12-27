@@ -18,30 +18,8 @@
 .global _start
 .global _get_stack_pointer
 .global _exception_table
-.global _enable_interrupts
 
-// From the ARM ARM (Architecture Reference Manual). Make sure you get the
-// ARMv5 documentation which includes the ARMv6 documentation which is the
-// correct processor type for the Broadcom BCM2835. The ARMv6-M manuals
-// available on the ARM website are for Cortex-M parts only and are very
-// different.
-//
-// See ARM section A2.2 (Processor Modes)
-
-.equ    CPSR_MODE_USER,         0x10
-.equ    CPSR_MODE_FIQ,          0x11
-.equ    CPSR_MODE_IRQ,          0x12
-.equ    CPSR_MODE_SVR,          0x13
-.equ    CPSR_MODE_ABORT,        0x17
-.equ    CPSR_MODE_HYPERVISOR,   0x1A
-.equ    CPSR_MODE_UNDEFINED,    0x1B
-.equ    CPSR_MODE_SYSTEM,       0x1F
-.equ    CPSR_MODE_MASK,         0x1F // Used to mask the Mode bit in the CPSR
-
-// See ARM section A2.5 (Program status registers)
-.equ    CPSR_IRQ_INHIBIT,       0x80
-.equ    CPSR_FIQ_INHIBIT,       0x40
-.equ    CPSR_THUMB,             0x20
+#include <kernel/boot/cpsr.h>
 
 // See ARM section B3.3
 // The value can be decoded into constituent parts, but can be gathered easily by running
@@ -67,7 +45,7 @@
 // At the start address we have a "jump table", specifically laid out to allow jump to an address that is stored in
 // memory. This table must be laid out exactly as shown (including the instruction ldr pc,)
 _start:
-    ldr pc, _reset_h
+    ldr pc, _reset_vector_h
     ldr pc, _undefined_instruction_vector_h
     ldr pc, _software_interrupt_vector_h
     ldr pc, _prefetch_abort_vector_h
@@ -76,25 +54,16 @@ _start:
     ldr pc, _interrupt_vector_h
     ldr pc, _fast_interrupt_vector_h
 
-_reset_h:                           .word   _reset_
-_undefined_instruction_vector_h:    .word   _reset_
-_software_interrupt_vector_h:       .word   _reset_
-_prefetch_abort_vector_h:           .word   _reset_
-_data_abort_vector_h:               .word   _reset_
-_unused_handler_h:                  .word   _reset_
-_interrupt_vector_h:                .word   _reset_
-_fast_interrupt_vector_h:           .word   _reset_
+_reset_vector_h:                    .word  _reset_handler
+_undefined_instruction_vector_h:    .word  _undefined_instruction_handler
+_software_interrupt_vector_h:       .word  _software_interrupt_handler
+_prefetch_abort_vector_h:           .word  _prefetch_abort_handler
+_data_abort_vector_h:               .word  _data_abort_handler
+_unused_handler_h:                  .word  _unused_handler
+_interrupt_vector_h:                .word  _irq_handler_asm
+_fast_interrupt_vector_h:           .word  _fiq_handler
 
-//_reset_h:                           .word   _reset_
-//_undefined_instruction_vector_h:    .word   undefined_instruction_vector
-//_software_interrupt_vector_h:       .word   software_interrupt_vector
-//_prefetch_abort_vector_h:           .word   prefetch_abort_vector
-//_data_abort_vector_h:               .word   data_abort_vector
-//_unused_handler_h:                  .word   _reset_
-//_interrupt_vector_h:                .word   interrupt_vector
-//_fast_interrupt_vector_h:           .word   fast_interrupt_vector
-
-_reset_:
+_reset_handler:
     // Determine what mode the cpu has started up in. When we get to the very start of the ARM execution we can
     // extract the Current Program Status Register value and mask off the Mode field which is defined in the ARM
     // Architecture Reference Manual for ARMV6 ARMV7 and ARMV8 as M[4:0] - in other words the 5 lowest bits
@@ -102,7 +71,7 @@ _reset_:
     mrs r12, CPSR
     and r12, #CPSR_MODE_MASK    // Zero all bits except the CPSR_MODE_MASK bits to be left with the mode value in r11
 
-    // Store the CPSR start mode in a ":lobal variable" that is accessible to all (including the C world)
+    // Store the CPSR start mode in a ":global variable" that is accessible to all (including the C world)
     ldr r11, =_cpsr_startup_mode
     str r12, [r11]
 
@@ -124,12 +93,10 @@ _reset_:
     bne _multicore_park
 
     // We're in hypervisor mode and we need to switch back in order to allow us to continue successfully
-    mrs r12, CPSR
+    mrs r12, cpsr
     bic r12, r12, #CPSR_MODE_MASK
-    orr r12, r12, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr SPSR_cxsf, r12
-
-    add lr, pc, #4
+    orr r12, r12, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r12
 
 _multicore_park:
     // On RPI2/3 make sure all cores that are not core 0 branch off to an infinite loop to make them enter a spinlock
@@ -140,7 +107,7 @@ _multicore_park:
 
 _setup_interrupt_table:
     // Preserve r0, r1, r2 for kernel
-    mov     r3, #0x8000
+    ldr     r3, =_start
     mov     r4, #0x0000
     
     ldmia   r3!,{r5, r6, r7, r8, r9, r10, r11, r12}
@@ -148,20 +115,21 @@ _setup_interrupt_table:
     ldmia   r3!,{r5, r6, r7, r8, r9, r10, r11, r12}
     stmia   r4!,{r5, r6, r7, r8, r9, r10, r11, r12}
 
+#if 0
     // We're going to use interrupt mode, so setup the interrupt mode
     // stack pointer which differs to the application stack pointer:
-    mov r3, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r3
+    msr cpsr_c, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
     ldr sp, =0x4000
 
     // Switch back to supervisor mode (our application mode) and
     // set the stack pointer. Remember that the stack works its way
     // down memory, our heap will work it's way up from after the
     // application.
-    mov r3, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r3
+    msr cpsr_c, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+#endif
     ldr sp, =0x8000
 
+#if 0
     // Enable L1 Cache
     // R3 = System Control Register
     mrc p15,#0,r3,c1,c0,#0
@@ -171,6 +139,7 @@ _setup_interrupt_table:
     orr r3,#SCTLR_ENABLE_INSTRUCTION_CACHE
     // System Control Register = R3
     mcr p15,0,r3,c1,c0,0
+#endif
 
     // Enable VFP 
     // r3 = Access Control Register
@@ -190,15 +159,11 @@ _setup_interrupt_table:
     // If main does return for some reason, just catch it and stay here.
 .global _inf_loop
 _inf_loop:
-    wfi
+    wfe
     b _inf_loop
-
 
 // A 32-bit value that represents the processor mode at startup
 _cpsr_startup_mode:  .word    0x0
-_osc:                .word    54000000
-_value:              .word    0x63fff
-_mbox:               .word    0xff8000cc
 
 _get_stack_pointer:
     // Return the stack pointer value
@@ -206,13 +171,4 @@ _get_stack_pointer:
     ldr     r0, [sp]
 
     // Return from the function
-    mov     pc, lr
-
-
-_enable_interrupts:
-    mrs     r0, cpsr
-    bic     r0, r0, #CPSR_IRQ_INHIBIT
-    msr     cpsr_c, r0
-    cpsie   i
-
     mov     pc, lr

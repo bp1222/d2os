@@ -1,76 +1,84 @@
-#include <kernel/kernel.h>
+#include <stdint.h>
+
 #include <kernel/interrupt.h>
-#include <kernel/utils/printk.h>
+#include <kernel/kernel.h>
+#include <kernel/scheduler.h>
 #include <kernel/boot/atags.h>
 #include <kernel/drivers/uart/uart.h>
-#include <kernel/drivers/gpio/gpio.h>
-
-void _enable_interrupts();
-
-volatile irq_registers_t *irq_registers = (irq_registers_t *)(INTERRUPT_BASE + 0x200);
-
-void toggle_led(uint32_t pin)
-{
-    if (!(GPIO_REG(GPLEV0) & (1 << pin)))
-    {
-        GPIO_REG(GPSET0) |= (1 << pin);
-    }
-    else
-    {
-        GPIO_REG(GPCLR0) |= (1 << pin);
-    }
-}
-
-extern int _cpsr_startup_mode;
-extern uint32_t __bss_end__;
+#include <kernel/drivers/timer/timer.h>
+#include <kernel/memory/memory.h>
+#include <kernel/utils/printk.h>
 
 extern void _inf_loop();
 
-void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t r2)
+typedef union {
+    struct {
+        uint32_t m : 5;
+        uint32_t t : 1;
+        uint32_t f : 1;
+        uint32_t i : 1;
+        uint32_t a : 1;
+        uint32_t e : 1;
+        uint32_t it_l : 6;
+        uint32_t ge : 4;
+        uint32_t reserved : 4;
+        uint32_t j : 1;
+        uint32_t it_h : 2;
+        uint32_t q : 1;
+        uint32_t v : 1;
+        uint32_t c : 1;
+        uint32_t z : 1;
+        uint32_t n : 1;
+    } r;
+    uint32_t cpsr;
+} cpsr_t;
+
+void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 {
     (void)r0;
     (void)r1;
-    uint32_t *r2p = (uint32_t*)r2;
+    cpsr_t temp;
+
+    asm volatile ("mrs %0,CPSR":"=r" (temp):);
+
+    atags_detect((uint32_t*)atags);
 
     uart_init();
     
-    atags_detect(r2p);
-
     printk("Welcome to D2os!\n\r");
-    atags_dump(r2p);
-    uint32_t rounded = 1;//(&__bss_end__)/(1024*1024);
-    rounded += 1;
-    rounded *= (1024 * 1024);
-    printk("Initializing memory: kernel 0x%x bytes, rounded up to 0x%x\n\r", &__bss_end__, rounded);
-    printk("Boot Args: r0 = %x, r1 = %x, r2 = %x\n\r", (uint32_t *)r0, (uint32_t*)r1, (uint32_t *)r2);
+    printk("CSPR: 0x%x\n\r", temp);
+    printk("\tIRQ: %d\n\r", temp.r.i);
+    printk("\tFIQ: %d\n\r", temp.r.f);
+    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r", (uint32_t *)r0, (uint32_t*)r1, (uint32_t *)atags);
+    atags_dump((uint32_t*)atags);
 
-    _inf_loop();
+    interrupt_init();
+
+    timer_init();
 
     goto die;
 
+/*
     // Set GPIO 25 for output LED
     SET_OUTPUT_PIN(25);
 
     // Set GPIO 23 for input button
     SET_INPUT_PIN(23);
-    SET_PIN_PULL(PULL_UP, 23);
+    SET_PINS_PULL(PULL_UP, (1 << 23));
     GPIO_REG(GPFEN0) |= (1 << 23);
     GPIO_REG(GPEDS0) |= (1 << 23);
 
     irq_registers->Enable_IRQs_2 |= (1 << 17);
 
     _enable_interrupts();
+*/
 die:
-    while (1)
-        ;
-}
+    printk("\n\rFully Booted\n\r");
 
-void __attribute__((interrupt("IRQ"))) irq_handler(void)
-{
-    if (GPIO_REG(GPEDS0) & (1 << 23))
-    {
-        GPIO_REG(GPEDS0) |= (1 << 23);
-        toggle_led(25);
+    schedule();
+
+    while (1) {
+        asm("wfi");
     }
 }
 

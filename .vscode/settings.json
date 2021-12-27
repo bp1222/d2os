@@ -3,6 +3,8 @@
         "kernel.h": "c",
         "atags.h": "c",
         "uart.h": "c",
-        "printk.h": "c"
+        "printk.h": "c",
+        "peripheral.h": "c",
+        "interrupt.h": "c"
     }
 }

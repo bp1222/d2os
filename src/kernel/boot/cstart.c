@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <kernel/kernel.h>
 
 extern int __bss_start__;
