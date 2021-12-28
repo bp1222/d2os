@@ -1,6 +1,6 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
-#include <kernel/peripheral.h>
+#include <kernel/kernel.h>
 
 #define INTERRUPT_OFFSET 0xB000
 #define INTERRUPT_BASE (PERIPHERAL_BASE + INTERRUPT_OFFSET + 0x200)

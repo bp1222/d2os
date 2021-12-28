@@ -174,7 +174,7 @@ static int parse_cmdline_int(char *cmdline, char *key)
 
 void atags_detect(uint32_t *atags)
 {
-    uint32_t size, total_ram;
+    uint32_t size;
     uint32_t *tags = atags;
     char *cmdline;
 
@@ -194,12 +194,11 @@ void atags_detect(uint32_t *atags)
 
         /* Physical Memory */
         case ATAG_MEM:
-            total_ram = tags[2];
             if (tags[3] != 0)
             {
                 printk("Warning!  We do not handle memory not starting at zero!\n");
             }
-            atag_info.ramsize = total_ram;
+            atag_info.ramsize = tags[2];
             tags += size;
             break;
 

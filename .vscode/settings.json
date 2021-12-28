@@ -6,5 +6,5 @@
         "printk.h": "c",
         "peripheral.h": "c",
         "interrupt.h": "c"
-    }
+    },
 }

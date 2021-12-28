@@ -9,75 +9,54 @@
 #include <kernel/utils/printk.h>
 #include <kernel/utils/string.h>
 
-#define PAGE_SIZE 0x1000
 #define MB 0x100000
+#define PAGE_SIZE 0x1000
+#define RESERVED_KERNEL (8 * MB)
 
 extern uint32_t __end;
 
-IMPLEMENT_LIST(page);
+// Map over the 1GB of space
+#define MEM_REGION 1024 * MB / PAGE_SIZE / 32
+static uint32_t memory_map[MEM_REGION];
+static uint32_t max_page;
 
-static page_t *all_pages_array;
-static page_list_t free_pages;
-static uint32_t num_pages;
+static int memory_used(uint32_t page) {
+    uint32_t entry;
+    uint8_t bit;
+
+    entry = page / 32;
+    bit = page % 32;
+    memory_map[entry] |= 1 << bit;
+}
+
+static int memory_free(uint32_t page) {
+    uint32_t entry;
+    uint8_t bit;
+
+    entry = page / 32;
+    bit = page % 32;
+    memory_map[entry] &= ~(1 << bit);
+}
 
 void memory_init()
 {
-    num_pages = atags_get_memory() / PAGE_SIZE;
-    all_pages_array = (page_t *)&__end;
+    uint32_t memory_total = atags_get_memory();
+    uint32_t memory_kernel = (uint32_t)&__end;
+    uint32_t kernel_pages = memory_kernel / PAGE_SIZE;
 
-    memset(all_pages_array, 0, sizeof(page_t) * num_pages);
+    max_page = memory_total / PAGE_SIZE / 32;
 
-    INITIALIZE_LIST(free_pages)
-
-    uint32_t kernel_pages = (uint32_t)&__end / PAGE_SIZE;
     for (uint32_t i = 0; i < kernel_pages; i++) {
-        all_pages_array[i].virt_map = i * PAGE_SIZE;
-        all_pages_array[i].flags = PAGE_FLAG_ALLOCATED | PAGE_FLAG_KERNAL;
-    }
-    for (uint32_t i = kernel_pages; i < num_pages; i++) {
-        all_pages_array[i].virt_map = i * PAGE_SIZE;
-        all_pages_array[i].flags = 0;
-        append_page_list(&free_pages, &all_pages_array[i]);
+        memory_used(i);
     }
 
-    printk("Initializing memory: extended kernel size 0x%x, ram size: 0x%x\n\r", (uint32_t)&__end, atags_get_memory());
-    printk("\tPages: %x\n\r", num_pages);
+    printk("Initializing %dMB of memory. %d pages required, %d available\n\r"
+           "%dkB reserved (%dkB) kernel, %dkB memory map)\n\r",
+           memory_total / MB,
+           max_page, MEM_REGION,
+           RESERVED_KERNEL / 1024,
+           memory_kernel / 1024,
+           memory_total / PAGE_SIZE / 1024 / 32);
 
-    void *m = alloc_page();
-    free_page(m);
-
-#define RESERVED_KERNEL	(16*1024*1024)			// 16MB
-
-    setup_pagetable(0, atags_get_memory(), RESERVED_KERNEL);
-    init_mmu();
-}
-
-void *alloc_page()
-{
-    page_t *page;
-
-    if (size_page_list(&free_pages) == 0) {
-        return NULL;
-    }
-
-    page = pop_page_list(&free_pages);
-    page->flags = PAGE_FLAG_ALLOCATED | PAGE_FLAG_KERNAL;
-
-    memset((void*)page->virt_map, 0, PAGE_SIZE);
-    return (void*)page->virt_map;
-}
-
-void free_page(void *p)
-{
-    page_t *page;
-    uint32_t page_num = (uintptr_t)p / PAGE_SIZE;
-    
-    if (page_num > num_pages) {
-        printk("free_page: trying to free an unknown page\n\r");
-        return;
-    }
-    
-    page = &all_pages_array[page_num];
-    page->flags = 0;
-    append_page_list(&free_pages, page);
+    init_mmu(0, memory_total, RESERVED_KERNEL);
 }

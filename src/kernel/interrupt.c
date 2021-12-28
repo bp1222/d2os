@@ -11,8 +11,8 @@ static irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
 extern void _enable_interrupts();
 extern void _disable_interrupts();
 
-static interrupt_process_t process[100] = {0};
-static interrupt_clearer_t clearer[100] = {0};
+static interrupt_process_t process[NUM_INTERRUPTS] = {0};
+static interrupt_clearer_t clearer[NUM_INTERRUPTS] = {0};
 
 void interrupt_init()
 {

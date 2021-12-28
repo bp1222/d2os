@@ -128,7 +128,7 @@ static void putbin(unsigned int val, char* buff, int sz)
 void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
 {
     char bf[12];
-    char buf[32] = {};
+    char buf[32];
 
     char ch;
 

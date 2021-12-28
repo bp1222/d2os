@@ -19,25 +19,7 @@
 .global _get_stack_pointer
 .global _exception_table
 
-#include <kernel/boot/cpsr.h>
-
-// See ARM section B3.3
-// The value can be decoded into constituent parts, but can be gathered easily by running
-// cat /proc/cpuinfo when booting any of the RPi boards into Linux
-.equ    MAINID_ARMV6,           0x410FB767
-.equ    MAINID_ARMV7,           0x410FC073
-.equ    MAINID_ARMV8,           0x410FD034
-
-// See the following: https://github.com/raspberrypi/tools/blob/master/armstubs/armstub7.S
-.equ    GIC_DISTB,              0xff841000
-.equ    GICC_PMR,               0x4
-.equ    GICD_CTRLR,             0x0
-.equ    GICD_IGROUPR,           0x80
-.equ    GIC_CPUB_offset,        0x1000
-
-.equ    SCTLR_ENABLE_DATA_CACHE,        0x4
-.equ    SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
-.equ    SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
+#include <kernel/assembly.h>
 
 .code	32
 .align	2
@@ -60,7 +42,7 @@ _software_interrupt_vector_h:       .word  _software_interrupt_handler
 _prefetch_abort_vector_h:           .word  _prefetch_abort_handler
 _data_abort_vector_h:               .word  _data_abort_handler
 _unused_handler_h:                  .word  _unused_handler
-_interrupt_vector_h:                .word  _irq_handler_asm
+_interrupt_vector_h:                .word  _irq_handler
 _fast_interrupt_vector_h:           .word  _fiq_handler
 
 _reset_handler:
@@ -82,8 +64,8 @@ _reset_handler:
     // not yet at the point of requiring parallel processing.
 
     // Skip the Hypervisor mode check and core parking when RPI0/1
-    mrc p15, 0, r11, c0, c0, 0
-    ldr r10, =#MAINID_ARMV6
+    mrc MIDR(r11)
+    ldr r10, =MAINID_ARMV6
     cmp r11, r10
     beq _setup_interrupt_table
 
@@ -101,7 +83,7 @@ _reset_handler:
 _multicore_park:
     // On RPI2/3 make sure all cores that are not core 0 branch off to an infinite loop to make them enter a spinlock
     // We will then only operate with core 0 and setup stack pointers and the like for core 0
-    mrc p15, 0, r12, c0, c0, 5
+    mrc IDCR(r12)
     ands r12, #0x3
     bne _inf_loop
 
@@ -115,18 +97,18 @@ _setup_interrupt_table:
     ldmia   r3!,{r5, r6, r7, r8, r9, r10, r11, r12}
     stmia   r4!,{r5, r6, r7, r8, r9, r10, r11, r12}
 
-#if 0
     // We're going to use interrupt mode, so setup the interrupt mode
     // stack pointer which differs to the application stack pointer:
-    msr cpsr_c, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+    mov r3, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+    msr cpsr_c, r3
     ldr sp, =0x4000
 
     // Switch back to supervisor mode (our application mode) and
     // set the stack pointer. Remember that the stack works its way
     // down memory, our heap will work it's way up from after the
     // application.
-    msr cpsr_c, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
-#endif
+    mov r3, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+    msr cpsr_c, r3
     ldr sp, =0x8000
 
 #if 0
@@ -139,7 +121,6 @@ _setup_interrupt_table:
     orr r3,#SCTLR_ENABLE_INSTRUCTION_CACHE
     // System Control Register = R3
     mcr p15,0,r3,c1,c0,0
-#endif
 
     // Enable VFP 
     // r3 = Access Control Register
@@ -152,6 +133,7 @@ _setup_interrupt_table:
     mov r3,#0x40000000
     // fpexc = r3
     vmsr fpexc, r3
+#endif
 
     // Handoff to C
     bl _cstartup

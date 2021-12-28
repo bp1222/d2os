@@ -11,49 +11,28 @@
 
 extern void _inf_loop();
 
-typedef union {
-    struct {
-        uint32_t m : 5;
-        uint32_t t : 1;
-        uint32_t f : 1;
-        uint32_t i : 1;
-        uint32_t a : 1;
-        uint32_t e : 1;
-        uint32_t it_l : 6;
-        uint32_t ge : 4;
-        uint32_t reserved : 4;
-        uint32_t j : 1;
-        uint32_t it_h : 2;
-        uint32_t q : 1;
-        uint32_t v : 1;
-        uint32_t c : 1;
-        uint32_t z : 1;
-        uint32_t n : 1;
-    } r;
-    uint32_t cpsr;
-} cpsr_t;
-
 void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 {
     (void)r0;
     (void)r1;
-    cpsr_t temp;
 
-    asm volatile ("mrs %0,CPSR":"=r" (temp):);
-
+    /* Read Hardware Info */
     atags_detect((uint32_t*)atags);
 
+    /* Init Serial */
     uart_init();
     
-    printk("Welcome to D2os!\n\r");
-    printk("CSPR: 0x%x\n\r", temp);
-    printk("\tIRQ: %d\n\r", temp.r.i);
-    printk("\tFIQ: %d\n\r", temp.r.f);
-    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r", (uint32_t *)r0, (uint32_t*)r1, (uint32_t *)atags);
+    printk("Welcome to D2os!\n\r\n\r");
+    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r\n\r", (uint32_t *)r0, (uint32_t*)r1, (uint32_t *)atags);
     atags_dump((uint32_t*)atags);
 
+    /* Setup memory, start MMU */
+    memory_init();
+
+    /* Setup interrupts */
     interrupt_init();
 
+    /* Start System Timer */
     timer_init();
 
     goto die;

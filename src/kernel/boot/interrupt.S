@@ -1,4 +1,4 @@
-#include <kernel/boot/cpsr.h>
+#include <kernel/assembly.h>
 
 .global _enable_interrupts
 _enable_interrupts:
