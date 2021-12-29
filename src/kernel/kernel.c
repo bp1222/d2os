@@ -1,12 +1,16 @@
 #include <stdint.h>
 
+#include "vfp.h"
+
 #include <kernel/interrupt.h>
 #include <kernel/kernel.h>
+#include <kernel/memory.h>
+#include <kernel/mmu.h>
 #include <kernel/scheduler.h>
+#include <kernel/smp.h>
 #include <kernel/boot/atags.h>
 #include <kernel/drivers/uart/uart.h>
 #include <kernel/drivers/timer/timer.h>
-#include <kernel/memory/memory.h>
 #include <kernel/utils/printk.h>
 
 extern void _inf_loop();
@@ -29,8 +33,17 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     /* Setup memory, start MMU */
     memory_init();
 
+    /* Start MMU */
+    mmu_init();
+
+    /* Setup Floating Point */
+    vfp_init();
+
     /* Setup interrupts */
     interrupt_init();
+
+    /* Start other processors */
+    smp_boot();
 
     /* Start System Timer */
     timer_init();

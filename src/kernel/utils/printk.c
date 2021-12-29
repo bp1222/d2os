@@ -30,10 +30,12 @@
  */
 
 #include <kernel/utils/printk.h>
+#include <kernel/mutex.h>
 
 typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
 static void* stdout_putp;
+static mutex_t printk_mtx = 0;
 
 static void ui2a(unsigned int num, unsigned int base, int uc,char * bf)
 {
@@ -132,6 +134,8 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
 
     char ch;
 
+    mutex_acquire(&printk_mtx);
+
     while ((ch=*(fmt++))) {
         if (ch!='%')
             putf(putp,ch);
@@ -179,6 +183,7 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
         }
     }
 abort:;
+    mutex_release(&printk_mtx);
 }
 
 void init_printk(void* putp, void (*putf) (void*,char))
@@ -208,4 +213,3 @@ void tfp_sprintk(char* s,char *fmt, ...)
     putcp(&s,0);
     va_end(va);
 }
-

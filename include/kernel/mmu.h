@@ -1,10 +1,8 @@
 #ifndef __MMU_H__
 #define __MMU_H__
 
-void init_mmu(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end);
-
-extern void invalidate_data_cache(void) __attribute__((optimize(3)));
-extern void clean_data_cache(void) __attribute__((optimize(3)));
+void pagetable_init(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end);
+void mmu_init();
 
 /* The below is not exactly efficient, but it's very descriptive */
 typedef struct
@@ -73,7 +71,7 @@ typedef union
               .domain = 0b0000, \
               .imp = 0b0,       \
               .ap = 0b01,       \
-              .tex = 0b000,     \
+              .tex = 0b001,     \
               .apx = 0b0,       \
               .s = 0b1,         \
               .ng = 0b0,        \
@@ -88,12 +86,12 @@ typedef union
     {                           \
         .s = {.type = 0b10,     \
               .b = 0b1,         \
-              .c = 0b0,         \
-              .xn = 0b1,        \
+              .c = 0b1,         \
+              .xn = 0b0,        \
               .domain = 0b0000, \
               .imp = 0b0,       \
               .ap = 0b01,       \
-              .tex = 0b000,     \
+              .tex = 0b001,     \
               .apx = 0b0,       \
               .s = 0b1,         \
               .ng = 0b0,        \

@@ -28,9 +28,10 @@
 
 // Register Helpers
 #define MIDR(reg) p15, 0, reg, c0, c0, 0
-#define IDCR(reg) p15, 0, reg, c0, c0, 5
-#define SCTLR(reg) p15, 0, reg, c1, c0, 0
+#define MPIDR(reg) p15, 0, reg, c0, c0, 5
 #define CLIDR(reg) p15, 1, reg, c0, c0, 1
+#define SCTLR(reg) p15, 0, reg, c1, c0, 0
+#define CPACR(reg) p15, 0, reg, c1, c0, 2
 #define TTBR0(reg) p15, 0, reg, c2, c0, 0
 #define TTBCR(reg) p15, 0, reg, c2, c0, 2
 #define DACR(reg) p15, 0, reg, c3, c0, 0

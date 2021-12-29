@@ -1,8 +1,8 @@
 #include <stdint.h>
 
 #include <kernel/peripheral.h>
-#include <kernel/memory/memory.h>
-#include <kernel/memory/mmu.h>
+#include <kernel/memory.h>
+#include <kernel/mmu.h>
 #include <kernel/utils/printk.h>
 
 #define NUM_PAGE_TABLE_ENTRIES 4096
@@ -10,13 +10,14 @@
 static __attribute__((aligned(0x4000))) volatile uint32_t page_table[NUM_PAGE_TABLE_ENTRIES];
 
 /* Enable a one-to-one physical to virtual mapping using 1MB pagetables */
-void setup_pagetable(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
+void pagetable_init(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 {
 	uint32_t entry;
 	int mmu_debug = 1;
 
 	if (mmu_debug)
 	{
+		printk("Initializing Page Table\n");
 		printk("\tSetting 1:1, cache disabled "
 			   "for %d page table entries\n",
 			   NUM_PAGE_TABLE_ENTRIES);
@@ -65,11 +66,23 @@ void setup_pagetable(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 		printk("\tSetting Peripheral (0x%x) for 0x%x to 0x%x\n",
 			   SECTION_PERIPH, PERIPHERAL_BASE, PERIPHERAL_END);
 	}
+
+	/* Set for Quad-A7 fields actual range is 0x40000000 - 0x40040000 but that's small*/
+	for (entry = 0x40000000 >> 20; entry < 0x40100000 >> 20; entry++)
+	{
+		page_table[entry] = entry << 20 | SECTION_KERNEL;
+	}
+	if (mmu_debug)
+	{
+		printk("\tSetting Quad-A7 fields (0x%x) for 0x%x to 0x%x\n",
+			   SECTION_KERNEL, 0x40000000, 0x40100000);
+	}
 }
 
-static void invalidate_instruction_cache() {
+static void tlb_invalidate_all()
+{
 	uint32_t reg = 0;
-	asm volatile("mcr p15, 0, %0, c7, c5, 1"
+	asm volatile("mcr p15, 0, %0, c8, c7, 0"
 				 :
 				 : "r"(reg));
 }
@@ -81,22 +94,31 @@ static void flush_branch_target_cache() {
 				 : "r"(reg));
 }
 
-static void tlb_invalidate_all()
-{
+static void invalidate_instruction_cache() {
 	uint32_t reg = 0;
-	asm volatile("mcr p15, 0, %0, c8, c7, 0"
+	asm volatile("mcr p15, 0, %0, c7, c5, 1"
 				 :
 				 : "r"(reg));
 }
 
-void init_mmu(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
+static void invalidate_data_cache() {
+	uint32_t reg = 0;
+	asm volatile("mcr p15, 0, %0, c7, c6, 0"
+				 :
+				 : "r"(reg));
+}
+
+static void clean_data_cache() {
+	uint32_t reg = 0;
+	asm volatile("mcr p15, 0, %0, c7, c10, 0"
+				 :
+				 : "r"(reg));
+}
+
+void mmu_init()
 {
 	int debug = 1;
 	uint32_t reg;
-
-	if (debug)
-		printk("Initializing PageTable\n\r");
-	setup_pagetable(mem_start, mem_end, kernel_end);
 
 	if (debug)
 		printk("Initializing MMU\n\r");
@@ -165,10 +187,10 @@ void init_mmu(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 	isb();
 
 	if (debug)
-		printk("\tEnable MMU, Cache, ICache\n");
+		printk("\tEnable MMU, Cache, Branch Prediction ICache\n");
 	asm volatile("mrc p15, 0, %0, c1, c0, 0"
 				 : "=r"(reg));
-	/* Enable MMU, Cache, and ICache */
+	/* Enable MMU, Cache, Branch Predicition, and ICache */
 	reg |= (1 << 0) | (1 << 2) | (1 << 11) | (1 << 12);
 	asm volatile("mcr p15, 0, %0, c1, c0, 0"
 				 :
