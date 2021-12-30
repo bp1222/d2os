@@ -2,10 +2,12 @@
 
 #include "vfp.h"
 
-#include <kernel/peripheral.h>
+#include <kernel/interrupt.h>
 #include <kernel/kernel.h>
 #include <kernel/mmu.h>
+#include <kernel/peripheral.h>
 #include <kernel/smp.h>
+#include <kernel/drivers/timer/timer.h>
 #include <kernel/utils/printk.h>
 
 extern void smp_init_core();
@@ -16,11 +18,12 @@ void smp_boot_core(uint32_t r0, uint32_t r1)
 {
     mmu_init();
     vfp_init();
+    _enable_interrupts();
 
     core_booted[r0] = 1;
+
     while (1) {
-        delay(100);
-        printk("Hello from %d\n", r0);
+        asm volatile ("wfi");
     }
 }
 
@@ -40,9 +43,8 @@ void smp_boot()
 }
 
 uint32_t smp_get_core() {
-    uint32_t reg;
+    uint32_t reg = 0;
     asm volatile("mrc p15, 0, %0, c0, c0, 5"
-                 :
-                 : "r"(reg));
+                 : "=r"(reg));
     return reg & 0x3;
 }

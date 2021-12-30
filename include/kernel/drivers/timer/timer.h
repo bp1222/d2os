@@ -1,5 +1,6 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
+#include <kernel/interrupt.h>
 #include <kernel/peripheral.h>
 
 #define TIMER_OFFSET 0x3000
@@ -25,7 +26,7 @@ typedef struct
     uint32_t timer3;
 } timer_registers_t;
 
-void timer_init();
-void timer_set(uint32_t usec);
+void timer_init(irq_value_t timer);
+void timer_set(irq_value_t timer, uint32_t usec);
 
 #endif

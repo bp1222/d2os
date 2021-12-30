@@ -22,7 +22,7 @@ static uint32_t memory_kernel;
 static uint32_t kernel_pages;
 static uint32_t max_page;
 
-static int memory_used(uint32_t page) {
+static void memory_used(uint32_t page) {
     uint32_t entry;
     uint8_t bit;
 
@@ -31,7 +31,7 @@ static int memory_used(uint32_t page) {
     memory_map[entry] |= 1 << bit;
 }
 
-static int memory_free(uint32_t page) {
+static void memory_free(uint32_t page) {
     uint32_t entry;
     uint8_t bit;
 
@@ -50,6 +50,8 @@ void memory_init()
     for (uint32_t i = 0; i < kernel_pages; i++) {
         memory_used(i);
     }
+
+    memory_free(kernel_pages+1);
 
     printk("Initializing %dMB of memory. %d pages required, %d available\n\r"
            "%dkB reserved (%dkB) kernel, %dkB memory map)\n\r",

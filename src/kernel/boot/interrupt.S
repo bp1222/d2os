@@ -34,3 +34,23 @@ _irq_handler_asm:
     add     sp, sp, r1
     pop     {r0-r3, r12, lr}// Revert the caller save registers
     rfeia   sp!             // Load the saved return address and program state register from before the interrupt from the stack and return 
+
+.global _interrupt_table
+_interrupt_table:
+    ldr pc, _reset_vector_h
+    ldr pc, _undefined_instruction_vector_h
+    ldr pc, _software_interrupt_vector_h
+    ldr pc, _prefetch_abort_vector_h
+    ldr pc, _data_abort_vector_h
+    ldr pc, _unused_handler_h
+    ldr pc, _interrupt_vector_h
+    ldr pc, _fast_interrupt_vector_h
+
+_reset_vector_h:                    .word  _reset_handler
+_undefined_instruction_vector_h:    .word  _undefined_instruction_handler
+_software_interrupt_vector_h:       .word  _software_interrupt_handler
+_prefetch_abort_vector_h:           .word  _prefetch_abort_handler
+_data_abort_vector_h:               .word  _data_abort_handler
+_unused_handler_h:                  .word  _unused_handler
+_interrupt_vector_h:                .word  _irq_handler
+_fast_interrupt_vector_h:           .word  _fiq_handler

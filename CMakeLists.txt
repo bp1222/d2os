@@ -7,6 +7,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostartfiles")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -specs=nosys.specs")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffreestanding")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 file(GLOB_RECURSE CORE_ASM     "${CMAKE_CURRENT_LIST_DIR}/*.s")
 file(GLOB_RECURSE CORE_SOURCES "${CMAKE_CURRENT_LIST_DIR}/*.c")

@@ -23,30 +23,15 @@
 // memory. This table must be laid out exactly as shown (including the instruction ldr pc,)
 .global _start
 _start:
-    ldr pc, _reset_vector_h
-    ldr pc, _undefined_instruction_vector_h
-    ldr pc, _software_interrupt_vector_h
-    ldr pc, _prefetch_abort_vector_h
-    ldr pc, _data_abort_vector_h
-    ldr pc, _unused_handler_h
-    ldr pc, _interrupt_vector_h
-    ldr pc, _fast_interrupt_vector_h
-
-_reset_vector_h:                    .word  _reset_handler
-_undefined_instruction_vector_h:    .word  _undefined_instruction_handler
-_software_interrupt_vector_h:       .word  _software_interrupt_handler
-_prefetch_abort_vector_h:           .word  _prefetch_abort_handler
-_data_abort_vector_h:               .word  _data_abort_handler
-_unused_handler_h:                  .word  _unused_handler
-_interrupt_vector_h:                .word  _irq_handler
-_fast_interrupt_vector_h:           .word  _fiq_handler
-
+    ldr pc, =_reset_handler
+    
+.global _reset_handler
 _reset_handler:
     // Skip the Hypervisor mode check and core parking when RPI0/1
     mrc MIDR(r11)
     ldr r10, =MAINID_ARMV6
     cmp r11, r10
-    beq _setup_interrupt_table
+    beq _no_hyp
 
     // Did we start up in hypervisor mode? If we didn't go ahead an park the cpus, we can then get back to SVC mode
     // later on
@@ -65,9 +50,9 @@ _multicore_park:
     ands r12, #0x3
     bne _inf_loop
 
-_setup_interrupt_table:
+_no_hyp:
     // Preserve r0, r1, r2 for kernel
-    ldr     r3, =_start
+    ldr     r3, =_interrupt_table
     mov     r4, #0x0000
     
     ldmia   r3!,{r5-r12}
@@ -94,5 +79,5 @@ _setup_interrupt_table:
 
     // If main does return for some reason, just catch it and stay here.
 _inf_loop:
-    wfe
+    wfi
     b _inf_loop

@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include <kernel/interrupt.h>
 #include <kernel/drivers/timer/timer.h>
 #include <kernel/utils/printk.h>
 
@@ -7,5 +8,5 @@
 
 void schedule() {
     printk("Scheduling\n\r");
-    timer_set(SCHEDULER_DELAY);
+    timer_set(INTERRUPT_TIMER0, SCHEDULER_DELAY);
 }

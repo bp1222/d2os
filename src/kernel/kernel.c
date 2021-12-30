@@ -14,6 +14,11 @@
 #include <kernel/utils/printk.h>
 
 extern void _inf_loop();
+typedef struct
+{
+    char *name;
+    uint32_t addr;
+} freg_t;
 
 void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 {
@@ -21,14 +26,14 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     (void)r1;
 
     /* Read Hardware Info */
-    atags_detect((uint32_t*)atags);
+    atags_detect((uint32_t *)atags);
 
     /* Init Serial */
     uart_init();
-    
+
     printk("Welcome to D2os!\n\r\n\r");
-    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r\n\r", (uint32_t *)r0, (uint32_t*)r1, (uint32_t *)atags);
-    atags_dump((uint32_t*)atags);
+    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r\n\r", (uint32_t *)r0, (uint32_t *)r1, (uint32_t *)atags);
+    atags_dump((uint32_t *)atags);
 
     /* Setup memory, start MMU */
     memory_init();
@@ -46,7 +51,31 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     smp_boot();
 
     /* Start System Timer */
-    timer_init();
+    timer_init(INTERRUPT_TIMER0);
+
+    uint32_t *a = (uint32_t*)0x4000000C;
+    printk("a 0x%x\n", *a);
+
+    uint32_t *b = (uint32_t*)0x40000064;
+    printk("b 0x%x\n", *b);
+
+    *a = 0b10;
+
+    freg_t regs[] = { {"Control Register", 0x40000000},
+                      {"GPU Routing", 0x4000000C},
+                      {"Local Interrupts", 0x40000024},
+                      {"Core 0 Source", 0x40000060},
+                      {"Core 1 Source", 0x40000064},
+                      {"Core 2 Source", 0x40000068},
+                      {"Core 3 Source", 0x4000006C},
+    };
+
+    for (int i = 0; i < 7; i++)
+    {
+        printk("%s 0x%x: 0x%x\n", regs[i].name, regs[i].addr, *(uint32_t*)regs[i].addr);
+    }
+
+    _enable_interrupts();
 
     goto die;
 
@@ -69,7 +98,8 @@ die:
 
     schedule();
 
-    while (1) {
+    while (1)
+    {
         asm("wfi");
     }
 }

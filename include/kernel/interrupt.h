@@ -44,4 +44,8 @@ typedef struct {
 void interrupt_init();
 void interrupt_register(uint32_t irq, interrupt_handlers_t handlers);
 
+extern void _enable_interrupts();
+extern void _disable_interrupts();
+
+
 #endif

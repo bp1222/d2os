@@ -8,6 +8,7 @@ _mutex_acquire_attempt:
     strexne r2, r1, [r0]
     cmpne   r2, #0x1
     beq     _mutex_acquire_attempt
+    
     dmb
     bx      lr
 
@@ -21,5 +22,6 @@ mutex_release:
     mov     r1, #0x0
     dmb
     str     r1, [r0]
+    dmb
     sev
     bx      lr

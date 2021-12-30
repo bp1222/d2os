@@ -1,15 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <kernel/kernel.h>
 #include <kernel/interrupt.h>
+#include <kernel/kernel.h>
+#include <kernel/smp.h>
 #include <kernel/drivers/uart/uart.h>
 #include <kernel/utils/printk.h>
 
-static irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
-
-extern void _enable_interrupts();
-extern void _disable_interrupts();
+static volatile irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
 
 static interrupt_process_t process[NUM_INTERRUPTS] = {0};
 static interrupt_clearer_t clearer[NUM_INTERRUPTS] = {0};
@@ -19,8 +17,6 @@ void interrupt_init()
     irq_reg->disable_1 = 0xFFFFFFFF;     // disable all interrupts
     irq_reg->disable_2 = 0xFFFFFFFF;     // disable all interrupts
     irq_reg->disable_basic = 0xFFFFFFFF; // disable all interrupts
-
-    _enable_interrupts();
 }
 
 void interrupt_unregister(uint32_t irq)
@@ -41,6 +37,8 @@ void interrupt_unregister(uint32_t irq)
         irq_reg->disable_basic |= 1 << irq;
     }
 }
+
+
 void interrupt_register(uint32_t irq, interrupt_handlers_t handlers)
 {
     process[irq] = handlers.processor;
@@ -91,12 +89,12 @@ void __attribute__((interrupt("UNUSED"))) _unused_handler(void)
 }
 void __attribute__((interrupt("IRQ"))) _irq_handler(void)
 {
+    _disable_interrupts();
+    printk("Handling on %d\t", smp_get_core());
     for (int i = 0; i < NUM_INTERRUPTS; i++)
     {
         if (irq_reg->pending_1 & (1 << i))
         {
-            _disable_interrupts();
-            irq_reg->pending_1 &= ~(1 << i);
             if (clearer[i])
             {
                 clearer[i](i);
@@ -105,10 +103,10 @@ void __attribute__((interrupt("IRQ"))) _irq_handler(void)
             {
                 process[i](i);
             }
-            _enable_interrupts();
+            irq_reg->pending_1 &= ~(1 << i);
         }
-        return;
     }
+    _enable_interrupts();
 }
 
 void __attribute__((interrupt("FIQ"))) _fiq_handler(void)

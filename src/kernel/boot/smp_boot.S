@@ -16,6 +16,12 @@ smp_init_core:
     msr cpsr_c, r0
 
 _continue_smp_init_core:
+    // We're going to use interrupt mode, so setup the interrupt mode
+    // stack pointer which differs to the application stack pointer:
+    mov r3, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+    msr cpsr_c, r3
+    ldr sp, =__irq_stack_top
+    
     mov r3, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
     msr cpsr_c, r3
 
@@ -33,8 +39,7 @@ _continue_smp_init_core:
     cmp r0, #0x3
     ldreq r1, =__svc_stack_top_core3
     beq _stack_set
-
-    // Error?
+    
     b _inf_loop
     
 _stack_set:
@@ -42,5 +47,5 @@ _stack_set:
     bl smp_boot_core
 
 _inf_loop:
-    wfe
+    wfi
     b _inf_loop
