@@ -12,7 +12,7 @@ static inline void mmio_write(uint32_t address, uint32_t data)
                  : [address] "r"(ptr), [data] "r"(data));
 }
 
-static inline uint32_t mmio_read(uint32_t address)
+static __attribute__((always_inline)) inline uint32_t mmio_read(uint32_t address) 
 {
     uint32_t *ptr = (uint32_t *)address;
     uint32_t data;

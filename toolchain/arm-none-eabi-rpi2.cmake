@@ -13,7 +13,7 @@ set( CMAKE_OBJCOPY      "${CROSS_COMPILE}objcopy"
 
 set( CMAKE_C_FLAGS      "${CMAKE_C_FLAGS} -mfpu=neon-vfpv4" )
 set( CMAKE_C_FLAGS      "${CMAKE_C_FLAGS} -march=armv7-a" )
-set( CMAKE_C_FLAGS      "${CMAKE_C_FLAGS} -mtune=cortex-a7" )
+set( CMAKE_C_FLAGS      "${CMAKE_C_FLAGS} -mtune=cortex-a9" )
 
 set( CMAKE_C_FLAGS      "${CMAKE_C_FLAGS}" CACHE STRING "" )
 set( CMAKE_ASM_FLAGS    "${CMAKE_C_FLAGS}" CACHE STRING "" )

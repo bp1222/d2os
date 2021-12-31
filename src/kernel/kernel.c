@@ -6,9 +6,11 @@
 #include <kernel/kernel.h>
 #include <kernel/memory.h>
 #include <kernel/mmu.h>
+#include <kernel/peripheral.h>
 #include <kernel/scheduler.h>
 #include <kernel/smp.h>
 #include <kernel/boot/atags.h>
+#include <kernel/drivers/ps2/ps2_keyboard.h>
 #include <kernel/drivers/uart/uart.h>
 #include <kernel/drivers/timer/timer.h>
 #include <kernel/utils/printk.h>
@@ -28,6 +30,9 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     /* Read Hardware Info */
     atags_detect((uint32_t *)atags);
 
+    /* Setup interrupts */
+    interrupt_init();
+
     /* Init Serial */
     uart_init();
 
@@ -44,15 +49,13 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     /* Setup Floating Point */
     vfp_init();
 
-    /* Setup interrupts */
-    interrupt_init();
-
-    /* Start other processors */
-    smp_boot();
 
     /* Start System Timer */
     timer_init(INTERRUPT_TIMER0);
 
+    keyboard_init();
+
+/*
     uint32_t *a = (uint32_t*)0x4000000C;
     printk("a 0x%x\n", *a);
 
@@ -74,8 +77,13 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     {
         printk("%s 0x%x: 0x%x\n", regs[i].name, regs[i].addr, *(uint32_t*)regs[i].addr);
     }
+    */
 
     _enable_interrupts();
+    /* Start other processors */
+    smp_boot();
+
+    //schedule();
 
     goto die;
 
@@ -95,8 +103,6 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
 */
 die:
     printk("\n\rFully Booted\n\r");
-
-    schedule();
 
     while (1)
     {

@@ -5,6 +5,7 @@
         "uart.h": "c",
         "printk.h": "c",
         "peripheral.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "gpio.h": "c"
     },
 }

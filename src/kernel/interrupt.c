@@ -9,8 +9,7 @@
 
 static volatile irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
 
-static interrupt_process_t process[NUM_INTERRUPTS] = {0};
-static interrupt_clearer_t clearer[NUM_INTERRUPTS] = {0};
+static interrupt_handler_t handlers[NUM_INTERRUPTS] = {0};
 
 void interrupt_init()
 {
@@ -21,8 +20,7 @@ void interrupt_init()
 
 void interrupt_unregister(uint32_t irq)
 {
-    process[irq] = NULL;
-    clearer[irq] = NULL;
+    handlers[irq] = NULL;
 
     if (IRQ_GPU_1(irq))
     {
@@ -30,88 +28,78 @@ void interrupt_unregister(uint32_t irq)
     }
     else if (IRQ_GPU_2(irq))
     {
-        irq_reg->disable_2 |= 1 << irq;
-    }
-    else if (IRQ_BASIC(irq))
-    {
-        irq_reg->disable_basic |= 1 << irq;
+        irq_reg->disable_2 |= 1 << irq % 32;
     }
 }
 
-
-void interrupt_register(uint32_t irq, interrupt_handlers_t handlers)
+void interrupt_register(uint32_t irq, interrupt_handler_t handler)
 {
-    process[irq] = handlers.processor;
-    clearer[irq] = handlers.clearer;
+    handlers[irq] = handler;
+
     if (IRQ_GPU_1(irq))
     {
         irq_reg->enable_1 |= 1 << irq;
     }
     else if (IRQ_GPU_2(irq))
     {
-        irq_reg->enable_2 |= 1 << irq;
-    }
-    else if (IRQ_BASIC(irq))
-    {
-        irq_reg->enable_basic |= 1 << irq;
+        irq_reg->enable_2 |= 1 << irq % 32;
     }
 }
 
 void __attribute__((interrupt("UNDEF"))) _undefined_instruction_handler(void)
 {
-    uart_putc('U');
     while (1)
         ;
 }
 void __attribute__((interrupt("SWI"))) _software_interrupt_handler(void)
 {
-    uart_putc('S');
     while (1)
         ;
 }
 void __attribute__((interrupt("ABORT"))) _prefetch_abort_handler(void)
 {
-    uart_putc('P');
     while (1)
         ;
 }
 void __attribute__((interrupt("ABORT"))) _data_abort_handler(void)
 {
-    uart_putc('D');
     while (1)
         ;
 }
 void __attribute__((interrupt("UNUSED"))) _unused_handler(void)
 {
-    uart_putc('U');
     while (1)
         ;
 }
 void __attribute__((interrupt("IRQ"))) _irq_handler(void)
 {
     _disable_interrupts();
-    printk("Handling on %d\t", smp_get_core());
-    for (int i = 0; i < NUM_INTERRUPTS; i++)
+    for (uint8_t irq = 0; irq < NUM_INTERRUPTS; irq++)
     {
-        if (irq_reg->pending_1 & (1 << i))
+        uint8_t irq_bit = irq % 32;
+
+        if (irq_reg->pending_1 & (1 << irq_bit))
         {
-            if (clearer[i])
+            if (handlers[irq])
             {
-                clearer[i](i);
+                handlers[irq](irq);
             }
-            if (process[i])
-            {
-                process[i](i);
-            }
-            irq_reg->pending_1 &= ~(1 << i);
+            irq_reg->pending_1 &= ~(1 << irq_bit);
         }
+        else if (irq_reg->pending_2 & (1 << irq_bit))
+        {
+            if (handlers[irq])
+            {
+                handlers[irq](irq);
+            }
+            irq_reg->pending_2 &= ~(1 << irq_bit);
+        } 
     }
     _enable_interrupts();
 }
 
 void __attribute__((interrupt("FIQ"))) _fiq_handler(void)
 {
-    uart_putc('F');
     while (1)
         ;
 }
