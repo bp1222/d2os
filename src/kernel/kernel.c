@@ -7,20 +7,37 @@
 #include <kernel/memory.h>
 #include <kernel/mmu.h>
 #include <kernel/peripheral.h>
-#include <kernel/scheduler.h>
 #include <kernel/smp.h>
 #include <kernel/boot/atags.h>
 #include <kernel/drivers/ps2/ps2_keyboard.h>
 #include <kernel/drivers/uart/uart.h>
 #include <kernel/drivers/timer/timer.h>
+#include <kernel/processes/process.h>
+#include <kernel/processes/scheduler.h>
 #include <kernel/utils/printk.h>
 
-extern void _inf_loop();
-typedef struct
-{
-    char *name;
-    uint32_t addr;
-} freg_t;
+void print_mode_stacks() {
+    uint32_t mode;
+
+    asm volatile(
+        "msr cpsr_c, %[stor]\n"
+        "mov %[mode], sp\n"
+        : [mode] "=r"(mode)
+        : [stor] "r"(0x12));
+    asm volatile(
+        "msr cpsr_c, %[stor]\n" 
+        :
+        : [stor] "r"(0x13));
+
+    printk("IRQ Stack: 0x%x\n", mode);
+
+    asm volatile(
+        "mov %0, sp\n" :"=r"(mode));
+
+    printk("SVC Stack: 0x%x\n", mode);
+}
+
+void print_sp_reg();
 
 void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 {
@@ -37,78 +54,40 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     uart_init();
 
     printk("Welcome to D2os!\n\r\n\r");
-    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n\r\n\r", (uint32_t *)r0, (uint32_t *)r1, (uint32_t *)atags);
+    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n", (uint32_t *)r0, (uint32_t *)r1, (uint32_t *)atags);
     atags_dump((uint32_t *)atags);
+    print_mode_stacks();
 
     /* Setup memory, start MMU */
     memory_init();
 
     /* Start MMU */
-    mmu_init();
+    //mmu_init();
 
     /* Setup Floating Point */
-    vfp_init();
-
+    //vfp_init();
 
     /* Start System Timer */
-    timer_init(INTERRUPT_TIMER0);
+    timer_init(INTERRUPT_TIMER1);
 
-    keyboard_init();
+    enable_interrupts();
 
-/*
-    uint32_t *a = (uint32_t*)0x4000000C;
-    printk("a 0x%x\n", *a);
-
-    uint32_t *b = (uint32_t*)0x40000064;
-    printk("b 0x%x\n", *b);
-
-    *a = 0b10;
-
-    freg_t regs[] = { {"Control Register", 0x40000000},
-                      {"GPU Routing", 0x4000000C},
-                      {"Local Interrupts", 0x40000024},
-                      {"Core 0 Source", 0x40000060},
-                      {"Core 1 Source", 0x40000064},
-                      {"Core 2 Source", 0x40000068},
-                      {"Core 3 Source", 0x4000006C},
-    };
-
-    for (int i = 0; i < 7; i++)
-    {
-        printk("%s 0x%x: 0x%x\n", regs[i].name, regs[i].addr, *(uint32_t*)regs[i].addr);
-    }
-    */
-
-    _enable_interrupts();
     /* Start other processors */
-    smp_boot();
+    //smp_boot();
 
-    //schedule();
+    process_t *p = idle_task(CPU_0);
+    init_userspace();
+    exec_process(p);
 
-    goto die;
-
-/*
-    // Set GPIO 25 for output LED
-    SET_OUTPUT_PIN(25);
-
-    // Set GPIO 23 for input button
-    SET_INPUT_PIN(23);
-    SET_PINS_PULL(PULL_UP, (1 << 23));
-    GPIO_REG(GPFEN0) |= (1 << 23);
-    GPIO_REG(GPEDS0) |= (1 << 23);
-
-    irq_registers->Enable_IRQs_2 |= (1 << 17);
-
-    _enable_interrupts();
-*/
-die:
-    printk("\n\rFully Booted\n\r");
-
+    int y = 0;
     while (1)
     {
-        asm("wfi");
+        
+        printk("NOPE 0x%x\n", y++);
+        asm volatile("wfi");
     }
 }
+
 
 void delay(int count)
 {

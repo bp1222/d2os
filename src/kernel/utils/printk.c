@@ -30,12 +30,10 @@
  */
 
 #include <kernel/utils/printk.h>
-#include <kernel/mutex.h>
 
 typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
 static void* stdout_putp;
-static mutex_t printk_mtx = 0;
 
 static void ui2a(unsigned int num, unsigned int base, int uc,char * bf)
 {
@@ -134,8 +132,6 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
 
     char ch;
 
-    mutex_acquire(&printk_mtx);
-
     while ((ch=*(fmt++))) {
         if (ch!='%')
             putf(putp,ch);
@@ -151,39 +147,38 @@ void tfp_format(void* putp, putcf putf, char *fmt, va_list va)
                 ch=a2i(ch,&fmt,10,&w);
             }
             switch (ch) {
-                case 0 :
-                    goto abort;
-                case 'b':
-                    putbin(va_arg(va, unsigned int), buf, 32);
-                    putchw(putp, putf, w, 0, buf);
-                    break;
-                case 'u' :
-                    ui2a(va_arg(va, unsigned int),10,0,bf);
-                    putchw(putp,putf,w,lz,bf);
-                    break;
-                case 'd' :
-                    i2a(va_arg(va, int),bf);
-                    putchw(putp,putf,w,lz,bf);
-                    break;
-                case 'x': case 'X' :
-                    ui2a(va_arg(va, unsigned int),16,(ch=='X'),bf);
-                    putchw(putp,putf,w,lz,bf);
-                    break;
-                case 'c' :
-                    putf(putp,(char)(va_arg(va, int)));
-                    break;
-                case 's' :
-                    putchw(putp,putf,w,0,va_arg(va, char*));
-                    break;
-                case '%' :
-                    putf(putp,ch);
-                default:
-                    break;
+            case 0:
+                break;
+            case 'b':
+                putbin(va_arg(va, unsigned int), buf, 32);
+                putchw(putp, putf, w, 0, buf);
+                break;
+            case 'u':
+                ui2a(va_arg(va, unsigned int), 10, 0, bf);
+                putchw(putp, putf, w, lz, bf);
+                break;
+            case 'd':
+                i2a(va_arg(va, int), bf);
+                putchw(putp, putf, w, lz, bf);
+                break;
+            case 'x':
+            case 'X':
+                ui2a(va_arg(va, unsigned int), 16, (ch == 'X'), bf);
+                putchw(putp, putf, w, lz, bf);
+                break;
+            case 'c':
+                putf(putp, (char)(va_arg(va, int)));
+                break;
+            case 's':
+                putchw(putp, putf, w, 0, va_arg(va, char *));
+                break;
+            case '%':
+                putf(putp, ch);
+            default:
+                break;
             }
         }
     }
-abort:;
-    mutex_release(&printk_mtx);
 }
 
 void init_printk(void* putp, void (*putf) (void*,char))

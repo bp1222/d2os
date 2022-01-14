@@ -16,7 +16,6 @@ _mutex_acquire_wait:
     wfe
     b _mutex_acquire_attempt
 
-
 .global mutex_release
 mutex_release: 
     mov     r1, #0x0

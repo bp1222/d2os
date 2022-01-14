@@ -1,4 +1,3 @@
-
 // Part of the Raspberry-Pi Bare Metal Tutorials
 // https://www.valvers.com/rpi/bare-metal/
 // Copyright (c) 2013-2020, Brian Sidebotham
@@ -19,12 +18,11 @@
 .code	32
 .align	2
 
-// At the start address we have a "jump table", specifically laid out to allow jump to an address that is stored in
-// memory. This table must be laid out exactly as shown (including the instruction ldr pc,)
 .global _start
 _start:
     ldr pc, =_reset_handler
     
+// Preserve r0, r1, r2 for kernel
 .global _reset_handler
 _reset_handler:
     // Skip the Hypervisor mode check and core parking when RPI0/1
@@ -40,9 +38,8 @@ _reset_handler:
     cmp r12, #CPSR_MODE_HYPERVISOR
     bne _multicore_park
 
-    // We're in hypervisor mode and we need to switch back in order to allow us to continue successfully
-    bic r12, r12, #CPSR_MODE_MASK
-    orr r12, r12, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
+    // We're in hypervisor mode and we need to switch back in order to allow us to continue
+    mov r12, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
     msr cpsr_c, r12
 
 _multicore_park:
@@ -51,7 +48,6 @@ _multicore_park:
     bne _inf_loop
 
 _no_hyp:
-    // Preserve r0, r1, r2 for kernel
     ldr     r3, =_interrupt_table
     mov     r4, #0x0000
     

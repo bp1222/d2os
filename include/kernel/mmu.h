@@ -70,7 +70,7 @@ typedef union
               .xn = 0b0,        \
               .domain = 0b0000, \
               .imp = 0b0,       \
-              .ap = 0b01,       \
+              .ap = 0b11,       \
               .tex = 0b001,     \
               .apx = 0b0,       \
               .s = 0b1,         \
@@ -90,8 +90,8 @@ typedef union
               .xn = 0b0,        \
               .domain = 0b0000, \
               .imp = 0b0,       \
-              .ap = 0b01,       \
-              .tex = 0b001,     \
+              .ap = 0b11,       \
+              .tex = 0b000,     \
               .apx = 0b0,       \
               .s = 0b1,         \
               .ng = 0b0,        \

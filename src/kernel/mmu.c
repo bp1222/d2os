@@ -18,9 +18,6 @@ void pagetable_init(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 	if (mmu_debug)
 	{
 		printk("Initializing Page Table\n");
-		printk("\tSetting 1:1, cache disabled "
-			   "for %d page table entries\n",
-			   NUM_PAGE_TABLE_ENTRIES);
 	}
 
 	/* Enable supervisor only and cachable for kernel */
@@ -37,7 +34,7 @@ void pagetable_init(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 	/* Enable cachable and readable by all for rest of RAM */
 	for (entry = kernel_end >> 20; entry < mem_end >> 20; entry++)
 	{
-		page_table[entry] = entry << 20 | SECTION_RAM;
+		page_table[entry] = entry << 20 | SECTION_KERNEL;
 	}
 	if (mmu_debug)
 	{
@@ -59,7 +56,7 @@ void pagetable_init(uint32_t mem_start, uint32_t mem_end, uint32_t kernel_end)
 	/* Set Peripheral area correctly */
 	for (entry = PERIPHERAL_BASE >> 20; entry < PERIPHERAL_END >> 20; entry++)
 	{
-		page_table[entry] = entry << 20 | SECTION_PERIPH;
+		page_table[entry] = entry << 20 | SECTION_KERNEL;
 	}
 	if (mmu_debug)
 	{
@@ -127,9 +124,6 @@ void mmu_init()
 		printk("\tClean the data cache\n");
 	clean_data_cache();
 
-	dmb();
-	isb();
-
 	/* Need to enable SMP cache coherency in auxiliary control register (ACTLR) */
 	if (debug)
 		printk("\tEnabling SMPEN in ACTLR\n");
@@ -139,33 +133,6 @@ void mmu_init()
 	asm volatile("mcr p15, 0, %0, c1, c0, 1"
 				 :
 				 : "r"(reg));
-
-	/* DACR: Domain Access Control Register */
-	if (debug)
-		printk("\tInitialize DACR\n");
-	reg = 0x55555555; // all domains, client access
-	asm volatile("mcr p15, 0, %0, c3, c0, 0"
-				 :
-				 : "r"(reg));
-
-	/* TTBCR : Translation Table Base Control Register */
-	if (debug)
-		printk("\tSetting TTBCR to use TTBR0 only\n");
-	reg = 0;
-	asm volatile("mcr p15, 0, %0, c2, c0, 2"
-				 :
-				 : "r"(reg));
-
-	/* TTBR0 (VMSA): Translation Table Base Register 0 */
-	if (debug)
-		printk("\tSetting page table to %x\n", (uint32_t)page_table | 0x5b);
-	reg = (uint32_t)&page_table | 0x5b; // 1011011
-	asm volatile("mcr p15, 0, %0, c2, c0, 0"
-				 :
-				 : "r"(reg));
-
-	dmb();
-	isb();
 
 	if (debug)
 		printk("\tInvalidating data cache\n\r");
@@ -183,8 +150,36 @@ void mmu_init()
 		printk("\tInvalidating TLB\n");
 	tlb_invalidate_all();
 
-	dsb();
-	isb();
+	/* TTBCR : Translation Table Base Control Register */
+	if (debug)
+		printk("\tSetting TTBCR to use TTBR0 only\n");
+	reg = 0;
+	asm volatile("mcr p15, 0, %0, c2, c0, 0"
+				 :
+				 : "r"(reg));
+
+	/* DACR: Domain Access Control Register */
+	if (debug)
+		printk("\tInitialize DACR\n");
+	reg = 0x55555555; // all domains, client access
+	asm volatile("mcr p15, 0, %0, c3, c0, 0"
+				 :
+				 : "r"(reg));
+
+	/* SCTLR.AFE */
+	if (debug)
+		printk("\tInitialize SCTLR.AFE\n");
+	asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(reg));
+	reg &= ~(1<<29);
+	asm volatile("mcr p15, 0, %0, c1, c0, 0" : : "r"(reg));
+
+	/* TTBR0 (VMSA): Translation Table Base Register 0 */
+	if (debug)
+		printk("\tSetting page table to %x\n", (uint32_t)page_table | 0x5b);
+	reg = (uint32_t)page_table | 0x5b;
+	asm volatile("mcr p15, 0, %0, c2, c0, 0"
+				 :
+				 : "r"(reg));
 
 	if (debug)
 		printk("\tEnable MMU, Cache, Branch Prediction ICache\n");

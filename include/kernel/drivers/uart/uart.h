@@ -77,5 +77,6 @@ typedef struct
 #define UART0_IMSC_CTSMIM (1 << 1)
 
 void uart_init();
+void uart_putc(char c);
 
 #endif

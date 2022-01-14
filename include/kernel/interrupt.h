@@ -38,8 +38,8 @@ typedef void (*interrupt_handler_t)(irq_value_t irq);
 void interrupt_init();
 void interrupt_register(uint32_t irq, interrupt_handler_t handler);
 
-extern void _enable_interrupts();
-extern void _disable_interrupts();
+void enable_interrupts();
+void disable_interrupts();
 
 
 #endif

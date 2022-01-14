@@ -6,6 +6,11 @@
         "printk.h": "c",
         "peripheral.h": "c",
         "interrupt.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "smp.h": "c",
+        "process.h": "c",
+        "scheduler.h": "c",
+        "memory.h": "c",
+        "timer.h": "c"
     },
 }

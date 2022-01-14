@@ -7,9 +7,19 @@
 #include <kernel/drivers/uart/uart.h>
 #include <kernel/utils/printk.h>
 
-static volatile irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
+#include <kernel/processes/process.h>
 
+static volatile irq_registers_t *irq_reg = (irq_registers_t *)INTERRUPT_BASE;
 static interrupt_handler_t handlers[NUM_INTERRUPTS] = {0};
+registers_t irq_current_registers = {0};
+
+void enable_interrupts() {
+    asm volatile("cpsie i");
+}
+
+void disable_interrupts() {
+    asm volatile("cpsid i");
+}
 
 void interrupt_init()
 {
@@ -48,32 +58,36 @@ void interrupt_register(uint32_t irq, interrupt_handler_t handler)
 
 void __attribute__((interrupt("UNDEF"))) _undefined_instruction_handler(void)
 {
+    printk("UNDEFINED at \n\r");
     while (1)
         ;
 }
 void __attribute__((interrupt("SWI"))) _software_interrupt_handler(void)
 {
+    printk("SWI at \n\r");
     while (1)
         ;
 }
 void __attribute__((interrupt("ABORT"))) _prefetch_abort_handler(void)
 {
+    printk("PREFETCH at \n\r");
     while (1)
         ;
 }
 void __attribute__((interrupt("ABORT"))) _data_abort_handler(void)
 {
+    printk("MEMORY ABORT\n\r");
     while (1)
         ;
 }
 void __attribute__((interrupt("UNUSED"))) _unused_handler(void)
 {
+    printk("UNUSED at \n\r");
     while (1)
         ;
 }
-void __attribute__((interrupt("IRQ"))) _irq_handler(void)
+void _irq_handler(void)
 {
-    _disable_interrupts();
     for (uint8_t irq = 0; irq < NUM_INTERRUPTS; irq++)
     {
         uint8_t irq_bit = irq % 32;
@@ -93,13 +107,13 @@ void __attribute__((interrupt("IRQ"))) _irq_handler(void)
                 handlers[irq](irq);
             }
             irq_reg->pending_2 &= ~(1 << irq_bit);
-        } 
+        }
     }
-    _enable_interrupts();
 }
 
 void __attribute__((interrupt("FIQ"))) _fiq_handler(void)
 {
+    printk("FIQ at \n\r");
     while (1)
         ;
 }

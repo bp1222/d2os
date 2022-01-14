@@ -18,7 +18,7 @@ void smp_boot_core(uint32_t r0, uint32_t r1)
 {
     mmu_init();
     vfp_init();
-    _enable_interrupts();
+    enable_interrupts();
 
     core_booted[r0] = 1;
 
@@ -42,9 +42,9 @@ void smp_boot()
     }
 }
 
-uint32_t smp_get_core() {
+cpu_core_t smp_get_core() {
     uint32_t reg = 0;
     asm volatile("mrc p15, 0, %0, c0, c0, 5"
-                 : "=r"(reg));
+                 :: "r"(reg));
     return reg & 0x3;
 }

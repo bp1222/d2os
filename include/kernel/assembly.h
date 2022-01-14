@@ -17,14 +17,12 @@
 // See ARM section A2.5 (Program status registers)
 #define CPSR_IRQ_INHIBIT 0x80
 #define CPSR_FIQ_INHIBIT 0x40
-#define CPSR_THUMB 0x20
 
 // See ARM section B3.3
 // The value can be decoded into constituent parts but can be gathered easily by running
 // cat /proc/cpuinfo when booting any of the RPi boards into Linux
 #define MAINID_ARMV6 0x410FB767
 #define MAINID_ARMV7 0x410FC073
-#define MAINID_ARMV8 0x410FD034
 
 // Register Helpers
 #define MIDR(reg) p15, 0, reg, c0, c0, 0
