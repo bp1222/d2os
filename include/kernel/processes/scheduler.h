@@ -5,6 +5,6 @@
 
 extern process_t *current_process[NUM_CPU];
 
-void schedule();
+void schedule(void *ctx);
 
 #endif

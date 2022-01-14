@@ -36,7 +36,7 @@ static void printk_putc(void *p, char c)
     uart_putc(c);
 }
 
-static void uart0_interrupt_handler(irq_value_t irq)
+static void uart0_interrupt_handler(irq_value_t irq, void *ctx)
 {
     uint32_t c;
     while (1)

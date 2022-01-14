@@ -37,64 +37,35 @@ _fast_interrupt_vector_h:           .word  _fiq_handler
 // void __attribute__((noreturn)) exec_process(process_t*)
 .global exec_process
 exec_process:
-    ldr     r1, [r0]
-    mov     sp, r1
-    ldmia   sp, {r0-r12, sp}^
+    mov     sp, r0
 
-    ldr     r0, [sp, #(4 * 15)]
-    ldr     lr, [sp, #(4 * 14)]
+    ldmia   sp!, {r0, lr} 
     msr     spsr, r0
+
+    ldmia   sp, {r0-r12, sp, lr}^
+    add     sp, sp, #60
 
     movs    pc, lr
 
 
-// This is not optimal, we should use stack.  But for clarity as to what we're doing this works
 _irq_handler_asm:
     sub lr, lr, #4                      // Fix Where to retun from IRQ for this process (PC, on RET)
-    push {lr}                           // Store on the stack, for now need this register
-    ldr lr, =irq_current_registers      // Load address for incoming reg struct
-    stmia lr, {r0-r12, sp, lr}^         // Store user mode r0-r12, sp, lr into it.
+
+    sub sp, sp, #60                     // Move stack pointer down to store user registers
+    stmia sp, {r0-r12, sp, lr}^         // Push user registers to the stack 
 
     mrs r0, spsr                        // Get the saved state register
-    pop {r1}                            // Load the LR for this IRQ
-    add lr, lr, #(4 * 15)               // Increment the pointer in the irq_current_registers
-    stmia lr, {r0, r1}                  // Store the spsr and the LR to the end
+    stmdb sp!, {r0, lr}                 // Store the spsr, and return location for this process
 
-    bl _irq_handler
+    mov r0, sp                          // Pass the process context ptr to the handler
+    bl _irq_handler                     // Handle IRQ
 
-    ldr lr, =irq_current_registers      // Reset the lr ptr to the reg struct to restore
-    ldmia lr, {r0-r12, sp, lr}^         // set the user mode values
+    ldmia sp!, {r0, lr}                 // Load the spsr, and return location for this process
+    msr spsr, r0                        // Set the saved state registers
+    ldmia sp, {r0-r12, sp, lr}^         // set the user mode values
+    add sp, sp, #60                     // Move stack pointer up for the loaded user registers
 
-    ldr r0, [lr, #(4 * 15)]             
-    ldr r1, [lr, #(4 * 16)]
-
-    msr spsr, r0
-
-    movs pc, r1
-
-/*
-    mrs r12, spsr
-    stmia lr!, {r0-r12, sp}
-    mov r12, lr
-    pop {lr}
-    sub lr, lr, #4
-    str lr, [r12]
-
-    bl _irq_handler
-
-    ldr r12, =irq_current_registers
-    ldmia r12, {r0-r12, sp, lr}
-    msr spsr, r12
-
-    and r12, #0x1f
-    cmp r12, #0x10
-    bne ret_from_irq
-
-    mov r12, sp
-    cps #0x1f
-    mov sp, r12
-    cps #0x12
-    */
+    movs pc, lr                         // Back to the user program
 
 ret_from_irq:
     cpsie i

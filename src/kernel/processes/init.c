@@ -15,26 +15,23 @@ void init_cb()
     {
         printk("INIT PROCESS %d 0x%x\n", i++, sp);
         asm volatile ("wfi");
+        if (i > 5) {
+            return;
+        }
     }
-}
-
-void reap() {
-    printk("REAPING PROCESS\n");
-    while (1)
-        ;
 }
 
 process_t *init_userspace()
 {
     void *stack = kmalloc(2048, USER_MEMORY);
+
     process_t *p = create_process("init", (stack_conf_t){stack, 2048});
 
     p->text = &init_cb;
     p->textsize = 4;
 
-    p->registers->lr = (uint32_t)reap;
-    p->registers->spsr = 0x50;
-    p->registers->pc = (uint32_t)init_cb;
+    p->registers.spsr = 0x50;
+    p->registers.pc = (uint32_t)init_cb;
 
     p->state = PROCESS_PENDING;
 

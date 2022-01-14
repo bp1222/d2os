@@ -33,7 +33,7 @@ typedef enum
 #define IRQ_GPU_1(i) (i < 32)
 #define IRQ_GPU_2(i) (i >= 32 && i < 64)
 
-typedef void (*interrupt_handler_t)(irq_value_t irq);
+typedef void (*interrupt_handler_t)(irq_value_t irq, void *ctx);
 
 void interrupt_init();
 void interrupt_register(uint32_t irq, interrupt_handler_t handler);

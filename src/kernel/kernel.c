@@ -70,8 +70,6 @@ void __attribute__((noreturn)) kernel_main(uint32_t r0, uint32_t r1, uint32_t at
     /* Start System Timer */
     timer_init(INTERRUPT_TIMER1);
 
-    enable_interrupts();
-
     /* Start other processors */
     //smp_boot();
 

@@ -50,9 +50,9 @@ process_t *idle_task (cpu_core_t cpu) {
 
     p = create_process("idle", (stack_conf_t){stack, 2048});
 
-    p->registers->lr = (uint32_t)idle_task_cb;
-
-    p->registers->spsr = 0x50;
+    p->registers.lr = (uint32_t)panic;
+    p->registers.spsr = 0x1F; // Run in privledged mode
+    p->registers.pc = (uint32_t)idle_task_cb;
 
     p->state = PROCESS_PENDING;
 

@@ -6,7 +6,7 @@
 #include <kernel/drivers/gpio/gpio.h>
 #include <kernel/drivers/uart/uart.h>
 
-static void keyboard_interrupt_handler(irq_value_t irq) {
+static void keyboard_interrupt_handler(irq_value_t irq, void *ctx) {
     printk("Handling Keyboard Event");
 }
 

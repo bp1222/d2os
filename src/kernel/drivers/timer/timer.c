@@ -8,16 +8,16 @@
 #include <kernel/utils/printk.h>
 
 static volatile timer_registers_t *timer_reg = (timer_registers_t *)TIMER_BASE;
-#define SCHEDULER_DELAY 1000000
+#define SCHEDULER_DELAY 100000
 
-static void timer_interrupt_handler(irq_value_t irq)
+static void timer_interrupt_handler(irq_value_t irq, void *ctx)
 {
     switch (irq)
     {
     case INTERRUPT_TIMER1:
         timer_reg->control.timer1_matched = 1;
         timer_reg->timer1 = timer_reg->counter_low + SCHEDULER_DELAY;
-        schedule();
+        schedule(ctx);
         break;
     default:
         break;

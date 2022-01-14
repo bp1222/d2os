@@ -86,7 +86,7 @@ void __attribute__((interrupt("UNUSED"))) _unused_handler(void)
     while (1)
         ;
 }
-void _irq_handler(void)
+void _irq_handler(void *ctx)
 {
     for (uint8_t irq = 0; irq < NUM_INTERRUPTS; irq++)
     {
@@ -96,7 +96,7 @@ void _irq_handler(void)
         {
             if (handlers[irq])
             {
-                handlers[irq](irq);
+                handlers[irq](irq, ctx);
             }
             irq_reg->pending_1 &= ~(1 << irq_bit);
         }
@@ -104,7 +104,7 @@ void _irq_handler(void)
         {
             if (handlers[irq])
             {
-                handlers[irq](irq);
+                handlers[irq](irq, ctx);
             }
             irq_reg->pending_2 &= ~(1 << irq_bit);
         }

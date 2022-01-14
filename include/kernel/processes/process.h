@@ -19,46 +19,34 @@ typedef enum
 
 typedef struct
 {
-    uint32_t r0;
-    uint32_t r1;
-    uint32_t r2;
-    uint32_t r3;
-    uint32_t r4;
-    uint32_t r5;
-    uint32_t r6;
-    uint32_t r7;
-    uint32_t r8;
-    uint32_t r9;
-    uint32_t r10;
-    uint32_t r11;
-    uint32_t r12;
-    uint32_t sp;
-    uint32_t lr;
+    // Kernel needed registers
     uint32_t spsr;
     uint32_t pc;
+    
+    // User registers
+    uint32_t r[13]; // r0 - r12
+    uint32_t sp;
+    uint32_t lr;
 } registers_t;
 
 struct process_t
 {
-    registers_t *registers;
+    registers_t registers;
+    
+    char *name;
 
     uint32_t pid;
 
-    // Next possible process to run
     process_t *next;
     process_t *parent;
 
-    char *name;
-
     process_state_t state;
 
-    // Text of program
-    void *text;
-    uint32_t textsize;
-
-    // stack
     void *stack;
     uint32_t stacksize;
+
+    void *text;
+    uint32_t textsize;
 };
 
 typedef struct {
@@ -67,6 +55,7 @@ typedef struct {
 } stack_conf_t;
 
 process_t *create_process(const char *name, stack_conf_t conf);
+void reap();
 void print_process(process_t *p);
 extern void switch_process(process_t *current, process_t *next);
 extern void exec_process(process_t *p);
