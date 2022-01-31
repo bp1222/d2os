@@ -11,6 +11,11 @@
         "process.h": "c",
         "scheduler.h": "c",
         "memory.h": "c",
-        "timer.h": "c"
+        "timer.h": "c",
+        "serial.h": "c",
+        "bcm_2835_interrupt.h": "c",
+        "stdarg.h": "c",
+        "stdlib.h": "c",
+        "stddef.h": "c"
     },
 }

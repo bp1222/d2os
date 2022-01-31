@@ -1,45 +1,26 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
-#include <kernel/kernel.h>
 
-#define INTERRUPT_OFFSET 0xB200
-#define INTERRUPT_BASE (PERIPHERAL_BASE + INTERRUPT_OFFSET)
-
-typedef struct
-{
-    uint32_t pending_basic;
-    uint32_t pending_1;
-    uint32_t pending_2;
-    uint32_t fiq_control;
-    uint32_t enable_1;
-    uint32_t enable_2;
-    uint32_t enable_basic;
-    uint32_t disable_1;
-    uint32_t disable_2;
-    uint32_t disable_basic;
-} irq_registers_t;
-
-typedef enum
-{
-    INTERRUPT_TIMER0 = 0,
-    INTERRUPT_TIMER1 = 1,
-    INTERRUPT_TIMER2 = 2,
-    INTERRUPT_TIMER3 = 3,
-    INTERRUPT_UART0 = 57,
-} irq_value_t;
-
-#define NUM_INTERRUPTS 64
-
-#define IRQ_GPU_1(i) (i < 32)
-#define IRQ_GPU_2(i) (i >= 32 && i < 64)
+typedef uint32_t irq_value_t;
 
 typedef void (*interrupt_handler_t)(irq_value_t irq, void *ctx);
 
-void interrupt_init();
-void interrupt_register(uint32_t irq, interrupt_handler_t handler);
+void set_interrupt_handler(irq_value_t irq, interrupt_handler_t handler);
+interrupt_handler_t get_interrupt_handler(irq_value_t irq);
+void remove_interrupt_handler(irq_value_t irq);
 
-void enable_interrupts();
-void disable_interrupts();
+typedef struct {
+    void (*mask)(irq_value_t irq);
+    void (*unmask)(irq_value_t irq);
+    void (*handle)(void *ctx);
+} kernel_interrupt_manager_t;
 
+void set_kernel_interrupt_manager(kernel_interrupt_manager_t *manager);
+
+// Entry Point from ASM
+void kernel_irq_handler(void *ctx);
+
+#define enable_interrupts arch_enable_interrupts
+#define disable_interrupts arch_disable_interrupts
 
 #endif

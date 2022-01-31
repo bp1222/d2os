@@ -2,23 +2,33 @@ cmake_minimum_required( VERSION 2.12 )
 
 project(kernel C ASM)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostartfiles")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=hard")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -specs=nosys.specs")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffreestanding")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+macro(add_source SOURCE_GLOB)
+	file(GLOB_RECURSE SOURCES "${SOURCE_GLOB}")
+  list(APPEND "KERNEL_SOURCES" "${SOURCES}")
+endmacro(add_source)
 
-file(GLOB_RECURSE CORE_ASM     "${CMAKE_CURRENT_LIST_DIR}/src/*.s")
-file(GLOB_RECURSE CORE_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/*.c")
-file(GLOB_RECURSE CORE_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/*.h")
+file(GLOB_RECURSE KERNEL_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/*.h")
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${PROJECT_SOURCE_DIR}/src/kernel.ld")
+add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/drivers/*.c")
 
-add_executable(${PROJECT_NAME}.elf ${CORE_ASM} ${CORE_SOURCES})
+add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/interrupt.c")
+add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/main.c")
+add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/panic.c")
 
-target_link_libraries(${PROJECT_NAME}.elf m)
-target_include_directories(${PROJECT_NAME}.elf PUBLIC ${PROJECT_SOURCE_DIR}/include)
+set(KERNEL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(${PROJECT_NAME}.elf ${KERNEL_SOURCES})
+
+MESSAGE(STATUS ${KERNEL_SOURCES})
+
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm")
+  add_subdirectory(kernel/arch/arm)
+endif()
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${PROJECT_SOURCE_DIR}/kernel.ld")
+
+target_link_libraries(${PROJECT_NAME}.elf ${ARCH_KERNEL_TARGET})
+target_include_directories(${PROJECT_NAME}.elf PUBLIC ${KERNEL_INCLUDE_DIR})
 
 add_custom_command(
   TARGET ${PROJECT_NAME}.elf POST_BUILD
