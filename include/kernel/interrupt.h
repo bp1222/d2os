@@ -1,5 +1,6 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
+#include <stdint.h>
 
 typedef uint32_t irq_value_t;
 
@@ -12,13 +13,13 @@ void remove_interrupt_handler(irq_value_t irq);
 typedef struct {
     void (*mask)(irq_value_t irq);
     void (*unmask)(irq_value_t irq);
-    void (*handle)(void *ctx);
-} kernel_interrupt_manager_t;
+    irq_value_t (*handle)(void *ctx);
+} kernel_interrupt_device_t;
 
-void set_kernel_interrupt_manager(kernel_interrupt_manager_t *manager);
+void set_kernel_interrupt_device(kernel_interrupt_device_t *manager);
 
 // Entry Point from ASM
-void kernel_irq_handler(void *ctx);
+void kernel_irq_handler(uint32_t irq, void *ctx);
 
 #define enable_interrupts arch_enable_interrupts
 #define disable_interrupts arch_disable_interrupts

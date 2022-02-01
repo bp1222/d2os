@@ -21,7 +21,7 @@ _software_interrupt_vector_h:       .word  . //_software_interrupt_handler
 _prefetch_abort_vector_h:           .word  . //_prefetch_abort_handler
 _data_abort_vector_h:               .word  . //_data_abort_handler
 _unused_vector_h:                   .word  . //_unused_handler
-_interrupt_vector_h:                .word  . //_irq_handler_asm
+_interrupt_vector_h:                .word  _irq_handler_asm
 _fast_interrupt_vector_h:           .word  . //_fiq_handler
 
 .macro kernel_entry
@@ -56,7 +56,7 @@ _irq_handler_asm:
     stmdb sp!, {r0, lr}                 // Store the spsr, and return location for this process
 
     mov r0, sp                          // Pass the process context ptr to the handler
-    bl kernel_irq_handler               // Handle IRQ
+    bl arch_kernel_irq_handler          // Handle IRQ
 
     ldmia sp!, {r0, lr}                 // Load the spsr, and return location for this process
     msr spsr, r0                        // Set the saved state registers

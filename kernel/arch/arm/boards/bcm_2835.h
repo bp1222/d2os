@@ -1,6 +1,10 @@
 #ifndef __BCM_2835_H__
 #define __BCM_2835_H__
 
-#define UART0_INTERRUPT 57
+#define INTERRUPT_TIMER0 0
+#define INTERRUPT_TIMER1 1
+#define INTERRUPT_TIMER2 2
+#define INTERRUPT_TIMER3 3
+#define INTERRUPT_UART0  57
 
 #endif

@@ -28,8 +28,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  */
-#if 0
-
 #include <kernel/utils/printk.h>
 
 typedef void (*putcf) (void*,char);
@@ -209,4 +207,3 @@ void tfp_sprintk(char* s,char *fmt, ...)
     putcp(&s,0);
     va_end(va);
 }
-#endif

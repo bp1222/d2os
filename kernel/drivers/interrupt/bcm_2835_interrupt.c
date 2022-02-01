@@ -37,7 +37,7 @@ void unmask(uint32_t irq)
     }
 }
 
-void handle(void *ctx)
+irq_value_t handle(void *ctx)
 {
     uint8_t irq;
     for (irq = 0; irq < NUM_INTERRUPTS; irq++)
@@ -46,34 +46,28 @@ void handle(void *ctx)
 
         if (irq_reg->pending_1 & (1 << irq_bit))
         {
-            /*
-            if (handlers[irq])
-            {
-                handlers[irq](irq, ctx);
-            }
-            */
             irq_reg->pending_1 &= ~(1 << irq_bit);
+            return irq;
         }
         else if (irq_reg->pending_2 & (1 << irq_bit))
         {
-            /*
-            if (handlers[irq])
-            {
-                handlers[irq](irq, ctx);
-            }
-            */
             irq_reg->pending_2 &= ~(1 << irq_bit);
+            return irq;
         }
     }
+
+    return 0;
 }
 
-static kernel_interrupt_manager_t interrupt_manager = {
+static kernel_interrupt_device_t interrupt_manager = {
     .mask = mask,
     .unmask = unmask,
     .handle = handle
 };
 
-void init_bcm_2835_interrupt(uint32_t base) {
+kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base) {
     irq_reg = (irq_registers_t*)(base + INTERRUPT_OFFSET);
-    set_kernel_interrupt_manager(&interrupt_manager);
+    set_kernel_interrupt_device(&interrupt_manager);
+
+    return &interrupt_manager;
 }

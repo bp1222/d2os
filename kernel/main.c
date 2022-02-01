@@ -1,6 +1,9 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include <kernel/kernel.h>
+#include <kernel/drivers/serial.h>
+#include <kernel/utils/printk.h>
 
 /*
 #include <kernel/interrupt.h>
@@ -14,11 +17,12 @@
 #include <kernel/drivers/timer/timer.h>
 #include <kernel/processes/process.h>
 #include <kernel/processes/scheduler.h>
-#include <kernel/utils/printk.h>
 */
 
 void __attribute__((noreturn)) kernel_main(const char *cmdline)
 {
+    init_printk(NULL, kernel_write);
+    printk("Welcome to D2os!\n\r\n\r");
     //interrupt_init();
 
     /*
@@ -51,7 +55,7 @@ void __attribute__((noreturn)) kernel_main(const char *cmdline)
     */
 
     while (1)
-        ;
+        asm volatile("wfi");
 }
 
 void delay(int count)

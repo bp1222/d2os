@@ -10,6 +10,7 @@ endmacro(add_source)
 file(GLOB_RECURSE KERNEL_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/*.h")
 
 add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/drivers/*.c")
+add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/utils/*.c")
 
 add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/interrupt.c")
 add_source("${CMAKE_CURRENT_LIST_DIR}/kernel/main.c")
@@ -19,13 +20,11 @@ set(KERNEL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(${PROJECT_NAME}.elf ${KERNEL_SOURCES})
 
-MESSAGE(STATUS ${KERNEL_SOURCES})
-
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm")
   add_subdirectory(kernel/arch/arm)
 endif()
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${PROJECT_SOURCE_DIR}/kernel.ld")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${ARCH_KERNEL_LD_SCRIPT}")
 
 target_link_libraries(${PROJECT_NAME}.elf ${ARCH_KERNEL_TARGET})
 target_include_directories(${PROJECT_NAME}.elf PUBLIC ${KERNEL_INCLUDE_DIR})

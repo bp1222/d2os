@@ -25,6 +25,6 @@ typedef struct
 #define IRQ_GPU_1(i) (i < 32)
 #define IRQ_GPU_2(i) (i >= 32 && i < 64)
 
-void init_bcm_2835_interrupt(uint32_t base);
+kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base);
 
 #endif

@@ -29,13 +29,6 @@ static uint32_t uart_getc()
     return uart_reg->DR & 0xff;
 }
 
-/*
-static void printk_putc(void *p, char c)
-{
-    uart_putc(c);
-}
-*/
-
 static void uart0_interrupt_handler(irq_value_t irq, void *ctx)
 {
     uint32_t c;
@@ -76,10 +69,6 @@ static void uart_init(void)
     uart_reg->CR |= UART0_CR_UARTEN |
                     UART0_CR_TXE |
                     UART0_CR_RXE;
-
-    // Set the output for printk - This should move elsewhere
-    //init_printk(NULL, printk_putc);
-
 }
 
 static kernel_serial_device_t uart_device = {
