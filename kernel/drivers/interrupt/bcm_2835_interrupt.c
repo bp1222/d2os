@@ -62,11 +62,11 @@ irq_value_t handle(void *ctx)
 static kernel_interrupt_device_t interrupt_manager = {
     .mask = mask,
     .unmask = unmask,
-    .handle = handle
-};
+    .handle = handle};
 
-kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base) {
-    irq_reg = (irq_registers_t*)(base + INTERRUPT_OFFSET);
+kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base)
+{
+    irq_reg = (irq_registers_t *)(base + INTERRUPT_OFFSET);
     set_kernel_interrupt_device(&interrupt_manager);
 
     return &interrupt_manager;

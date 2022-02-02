@@ -1,4 +1,4 @@
-#include "include/asm.h"
+#include <asm/asm.h>
 
 .section ".text.boot"
 .code	32

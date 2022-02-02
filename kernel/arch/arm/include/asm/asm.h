@@ -1,5 +1,5 @@
-#ifndef __ASSEMBLY_H__
-#define __ASSEMBLY_H__
+#ifndef __ASM_ASM_H__
+#define __ASM_ASM_H__
 
 #ifdef __ASSEMBLER__
 

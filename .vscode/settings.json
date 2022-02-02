@@ -1,4 +1,5 @@
 {
+    "editor.formatOnSave": true,
     "files.associations": {
         "kernel.h": "c",
         "atags.h": "c",
@@ -16,6 +17,8 @@
         "bcm_2835_interrupt.h": "c",
         "stdarg.h": "c",
         "stdlib.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "bcm_2835_timer.h": "c",
+        "stdint.h": "c"
     },
 }

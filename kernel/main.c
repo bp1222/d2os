@@ -2,6 +2,7 @@
 #include <stddef.h>
 
 #include <kernel/kernel.h>
+#include <kernel/mm/memory.h>
 #include <kernel/drivers/serial.h>
 #include <kernel/utils/printk.h>
 
@@ -23,6 +24,7 @@ void __attribute__((noreturn)) kernel_main(const char *cmdline)
 {
     init_printk(NULL, kernel_write);
     printk("Welcome to D2os!\n\r\n\r");
+    memory_init();
     //interrupt_init();
 
     /*

@@ -1,5 +1,5 @@
-#ifndef __PERIPHERAL_H__
-#define __PERIPHERAL_H__
+#ifndef __ASM_PERIPHERAL_H__
+#define __ASM_PERIPHERAL_H__
 #include <stdint.h>
 
 #define PERIPHERAL_BASE 0x3F000000UL

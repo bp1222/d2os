@@ -1,4 +1,4 @@
-#include "include/asm.h"
+#include <asm/asm.h>
 
 .code	32
 .align	2

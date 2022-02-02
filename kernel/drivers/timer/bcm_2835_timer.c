@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <kernel/kernel.h>
 #include <kernel/interrupt.h>
 #include <kernel/drivers/timer.h>
 #include <kernel/drivers/timer/bcm_2835_timer.h>
@@ -21,7 +22,6 @@ void timer_interrupt_handler(irq_value_t irq, void *ctx)
     {
         system_timer->control.timer3_matched = 1;
         schedule_next_timer(TICK);
-        printk("TICK\n");
     }
 }
 

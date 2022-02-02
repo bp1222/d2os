@@ -59,8 +59,7 @@ static void uart_init(void)
     uart_reg->LCRH &= ~UART0_LCRH_FEN;
 
     // Enable FIFO & 8 bit data transmission (1 stop bit, no parity).
-    uart_reg->LCRH |= 
-                      UART0_LCRH_FEN |
+    uart_reg->LCRH |= UART0_LCRH_FEN |
                       UART0_LCRH_WLEN_8BIT;
 
     uart_reg->IMSC |= UART0_IMSC_RXIM;
