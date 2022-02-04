@@ -1,5 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
+#include <stdint.h>
+#include <asm/memory.h>
 
 #define MEMORY_MAGIC 0xdeadbeef
 

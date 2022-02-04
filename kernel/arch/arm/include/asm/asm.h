@@ -3,6 +3,26 @@
 
 #ifdef __ASSEMBLER__
 
+// Special Offset Values
+#define CPU_CONTEXT_SIZE (17 * 4)
+#define C_R0 (0 * 4)
+#define C_R1 (1 * 4)
+#define C_R2 (2 * 4)
+#define C_R3 (3 * 4)
+#define C_R4 (4 * 4)
+#define C_R5 (5 * 4)
+#define C_R6 (6 * 4)
+#define C_R7 (7 * 4)
+#define C_R8 (8 * 4)
+#define C_R9 (9 * 4)
+#define C_R10 (10 * 4)
+#define C_R11 (11 * 4)
+#define C_R12 (12 * 4)
+#define C_SP (13 * 4)
+#define C_LR (14 * 4)
+#define C_PC (15 * 4)
+#define C_SPSR (16 * 4)
+
 // CPSR Mode
 #define CPSR_MODE_USER 0x10
 #define CPSR_MODE_FIQ 0x11

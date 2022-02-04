@@ -5,6 +5,7 @@
 #include <kernel/interrupt.h>
 #include <kernel/drivers/timer.h>
 #include <kernel/drivers/timer/bcm_2835_timer.h>
+#include <kernel/process/schedule.h>
 #include <kernel/utils/printk.h>
 
 static volatile timer_registers_t *system_timer;
@@ -22,6 +23,8 @@ void timer_interrupt_handler(irq_value_t irq, void *ctx)
     {
         system_timer->control.timer3_matched = 1;
         schedule_next_timer(TICK);
+        printk("TICK\n");
+        //schedule();
     }
 }
 

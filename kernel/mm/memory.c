@@ -6,8 +6,6 @@
 #include <kernel/mm/memory.h>
 #include <kernel/utils/printk.h>
 
-#include <asm/memory.h>
-
 /* MOVE ME */
 void memset(void *dest, uint8_t c, uint32_t l)
 {
@@ -32,7 +30,7 @@ static uint32_t memory_kernel;
 static uint32_t kernel_pages;
 static uint32_t max_page;
 
-//static mutex_t memory_mutex;
+static mutex_t memory_mutex;
 
 void hexstrings(unsigned int d)
 {

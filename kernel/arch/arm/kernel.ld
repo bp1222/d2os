@@ -5,7 +5,6 @@
 ENTRY(_start)
 
 __svc_stack_size = 0x08000;
-__irq_stack_size = 0x08000;
  
 SECTIONS
 {
@@ -61,10 +60,6 @@ SECTIONS
 	__end_kernel = .;
 
 	/****************** MODE STACKS ********************/
-	. = ALIGN(4096);
-	. = . + __irq_stack_size; 
-	__irq_stack_top = .;
-
 	. = ALIGN(4096);
 	. = . + __svc_stack_size; 
 	__svc_stack_top_core0 = .;

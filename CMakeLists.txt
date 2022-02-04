@@ -13,6 +13,7 @@ endmacro(add_source)
 
 add_sources("${PROJECT_SOURCE_DIR}/kernel/drivers/*.c")
 add_sources("${PROJECT_SOURCE_DIR}/kernel/mm/*.c")
+add_sources("${PROJECT_SOURCE_DIR}/kernel/process/*.c")
 add_sources("${PROJECT_SOURCE_DIR}/kernel/utils/*.c")
 
 add_source("${PROJECT_SOURCE_DIR}/kernel/interrupt.c")

@@ -2,8 +2,11 @@
 #include <stddef.h>
 
 #include <kernel/kernel.h>
+#include <kernel/interrupt.h>
 #include <kernel/mm/memory.h>
 #include <kernel/drivers/serial.h>
+#include <kernel/process/schedule.h>
+#include <kernel/process/task.h>
 #include <kernel/utils/printk.h>
 
 /*
@@ -20,12 +23,23 @@
 #include <kernel/processes/scheduler.h>
 */
 
+void idle_task();
+
+extern uint32_t *__end_kernel;
+extern uint32_t *__svc_stack_size;
+extern uint32_t *__svc_stack_top_core0;
+
 void __attribute__((noreturn)) kernel_main(const char *cmdline)
 {
     init_printk(NULL, kernel_write);
     printk("Welcome to D2os!\n\r\n\r");
+    printk("SVC Stack: 0x%x (Len: 0x%x)\n", &__svc_stack_top_core0, &__svc_stack_size);
     memory_init();
-    //interrupt_init();
+    enable_interrupts();
+
+    create_kernel_task(idle_task, NULL);
+
+    schedule();
 
     /*
     uart_init();
@@ -44,7 +58,6 @@ void __attribute__((noreturn)) kernel_main(const char *cmdline)
 
     smp_boot();
 
-    process_t *p = idle_task(CPU_0);
     init_userspace();
     exec_process(p);
 
@@ -57,7 +70,11 @@ void __attribute__((noreturn)) kernel_main(const char *cmdline)
     */
 
     while (1)
+    {
+        volatile register uint32_t sp asm("sp");
+        printk("Loop: 0x%x\n", sp);
         asm volatile("wfi");
+    }
 }
 
 void delay(int count)

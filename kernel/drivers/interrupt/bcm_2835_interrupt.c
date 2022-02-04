@@ -37,7 +37,7 @@ void unmask(uint32_t irq)
     }
 }
 
-irq_value_t handle(void *ctx)
+static irq_value_t get_irq(void *ctx)
 {
     uint8_t irq;
     for (irq = 0; irq < NUM_INTERRUPTS; irq++)
@@ -62,7 +62,8 @@ irq_value_t handle(void *ctx)
 static kernel_interrupt_device_t interrupt_manager = {
     .mask = mask,
     .unmask = unmask,
-    .handle = handle};
+    .get_irq = get_irq,
+};
 
 kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base)
 {

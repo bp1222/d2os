@@ -1,6 +1,8 @@
 #include <stdint.h>
 
 #include <kernel/kernel.h>
+#include <kernel/process/task.h>
+#include <kernel/mm/memory.h>
 
 #include <kernel/drivers/gpio/bcm_2835_gpio.h>
 #include <kernel/drivers/interrupt/bcm_2835_interrupt.h>
@@ -38,10 +40,17 @@ void __attribute__((noreturn)) arch_kernel_main(uint32_t r0, uint32_t r1, uint32
     kernel_main(atags_get_cmdline());
 }
 
+#include <kernel/utils/printk.h>
+
 void arch_kernel_irq_handler(void *ctx)
 {
-    irq_value_t irq = interrupt_manager->handle(ctx);
+    irq_value_t irq = interrupt_manager->get_irq(ctx);
     kernel_irq_handler(irq, ctx);
+}
+
+void print_sp(uint32_t sp)
+{
+    printk("\tSP: 0x%x\n");
 }
 
 uint32_t arch_get_cpu(void)
@@ -74,4 +83,15 @@ void arch_memory_init(uint32_t *memory_total, uint32_t *memory_kernel)
     extern uint32_t __end;
     *memory_total = atags_get_memory();
     *memory_kernel = (uint32_t)&__end;
+}
+
+#include <kernel/utils/printk.h>
+
+void arch_create_kernel_task(kernel_task_t *task, void *fn, void *arg)
+{
+    printk("ret_from_fk: 0x%x\n", return_from_fork);
+    task->context.pc = (uint32_t)return_from_fork;
+    task->context.sp = (uint32_t)task->stack_top;
+    task->context.r12 = (uint32_t)fn;  // r12 = fn
+    task->context.r11 = (uint32_t)arg; // r11 = arg
 }

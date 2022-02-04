@@ -24,63 +24,98 @@ _unused_vector_h:                   .word  . //_unused_handler
 _interrupt_vector_h:                .word  _irq_handler_asm
 _fast_interrupt_vector_h:           .word  . //_fiq_handler
 
-.macro kernel_entry
-    sub   lr, lr, #4
-    ldr   sp, [sp]
-
-    stmia sp, {r0-lr}
-.endm
-
-// void __attribute__((noreturn)) exec_process(process_t*)
-.global exec_process
-exec_process:
-    mov     sp, r0
-
-    ldmia   sp!, {r0, lr} 
-    msr     spsr, r0
-
-    ldmia   sp, {r0-r12, sp, lr}^
-    add     sp, sp, #60
-
-    movs    pc, lr
-
-
-// Need to check if handling interrupt from USER or SYSTEM context
 _irq_handler_asm:
-    sub lr, lr, #4                      // Fix Where to retun from IRQ for this process (PC, on RET)
+    ldr r13, __irq_stack_h
 
-    sub sp, sp, #60                     // Move stack pointer down to store user registers
-    stmia sp, {r0-r12, sp, lr}^         // Push user registers to the stack 
+    # Fix the return
+    sub lr, lr, #4
 
-    mrs r0, spsr                        // Get the saved state register
-    stmdb sp!, {r0, lr}                 // Store the spsr, and return location for this process
+    # Store currents lr, and the spsr to the IRQ stack
+    str lr, [r13]
+    mrs lr, spsr
+    str lr, [r13, #4]
 
-    mov r0, sp                          // Pass the process context ptr to the handler
-    bl arch_kernel_irq_handler          // Handle IRQ
+    # Prepare to change to SVC mode
+    mrs r13, cpsr
+    msr spsr, r13
+    msr spsr_c, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)
 
-    ldmia sp!, {r0, lr}                 // Load the spsr, and return location for this process
-    msr spsr, r0                        // Set the saved state registers
-    ldmia sp, {r0-r12, sp, lr}^         // set the user mode values
-    add sp, sp, #60                     // Move stack pointer up for the loaded user registers
+    # Determine which handler mode we're in
+    and lr, lr, #0x0f
+    ldr	lr, [pc, lr, lsl #2]
 
-    movs pc, lr                         // Back to the user program
-
-ret_from_irq:
-    cpsie i
+    # Switch to SVC mode and handle the interrupt
     movs pc, lr
 
+.word _irq_handler_usr
+.word .
+.word .
+.word _irq_handler_svc
 
-.global switch_process
-switch_process:
-    // Save the current thread's state
-    push    {r3-r5, lr}
-    //ldr     r3, =irq_current_registers
-    ldr     r4, [r0]
+_irq_handler_usr:
+    # Move stackpointer down to store the cpu context
+    sub sp, sp, #(CPU_CONTEXT_SIZE)
 
-    // Restore the new thread's state
-    ldr     r0, [r1]
-    pop     {r0-r12}
-    msr     spsr, r12   // Restore the new thread's program status register
-    pop     {lr}
-    pop     {lr}
-    subs    pc, lr
+    # Save r1-r12 to the stack
+    stmia sp, {r0-r12}
+
+    # Store User Regisgers
+    ldr r0, [sp, #C_SP]
+    stmia r0, {sp, lr}^
+    b .
+
+_irq_handler_svc:
+    # Move stackpointer down to store the cpu context
+    sub sp, sp, #(CPU_CONTEXT_SIZE)
+
+    # Save r1-r12 to the stack
+    stmia sp, {r0-r12}
+
+    #
+    # fiddle to finish the rest of the stack
+    # r0 = sp_svc, r1 = lr_svc, r2 = lr_irq, r3 = spsr_irq
+    #
+    add r0, sp, #(CPU_CONTEXT_SIZE)
+    mov r1, lr
+    ldr r2, __irq_stack_h
+    ldmia r2, {r2-r3}
+
+    # Store them to the stack
+    add r4, sp, #(12 * 4)
+    stmia r4, {r0-r3}
+
+    bl arch_kernel_irq_handler
+
+    add r4, sp, #(12 * 4)
+    ldmia r4, {r0-r3}
+
+    # Restore SPSR
+    msr spsr, r3
+    mov lr, r2
+
+    # Restore r0-r12
+    ldmia sp, {r0, r12}
+
+    # Move stack pointer back up
+    add sp, sp, #(CPU_CONTEXT_SIZE)
+
+    movs pc, lr
+
+__irq_stack_h: .word __irq_stack
+
+__irq_stack:
+    .word 0 // lr_irq
+    .word 0 // spsr_irq
+
+.global return_from_fork
+return_from_fork:
+    bl enable_preempt
+    mov r0, r11
+    mov pc, r12
+
+// r0 = (kernel_task_t*)old, r1 = (kernel_task_t*)new
+.global arch_switch_task 
+arch_switch_task:
+    stmia   r0, {r4-r12, sp, pc}
+    ldmia   r1, {r4-r12, sp, lr}
+    mov     pc, lr

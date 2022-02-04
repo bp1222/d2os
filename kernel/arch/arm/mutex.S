@@ -1,23 +1,21 @@
-.global mutex_acquire
-mutex_acquire:
+.global arch_mutex_acquire
+arch_mutex_acquire:
     mov     r1, #0x1
-_mutex_acquire_attempt:
+1:
     ldrex   r2, [r0]
     cmp     r2, r1
-    beq     _mutex_acquire_wait
+    beq     2f
     strexne r2, r1, [r0]
     cmpne   r2, #0x1
-    beq     _mutex_acquire_attempt
-    
+    beq     1b
     dmb
     bx      lr
-
-_mutex_acquire_wait:
+2:
     wfe
-    b _mutex_acquire_attempt
+    b 1b
 
-.global mutex_release
-mutex_release: 
+.global arch_mutex_release
+arch_mutex_release: 
     mov     r1, #0x0
     dmb
     str     r1, [r0]
