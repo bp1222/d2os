@@ -6,14 +6,15 @@
 
 static volatile irq_registers_t *irq_reg;
 
-void interrupt_init()
+static void bcm2835_interrupt_init()
 {
-    irq_reg->disable_1 = 0xFFFFFFFF;     // disable all interrupts
-    irq_reg->disable_2 = 0xFFFFFFFF;     // disable all interrupts
-    irq_reg->disable_basic = 0xFFFFFFFF; // disable all interrupts
+    irq_reg->disable_1 = 0xFFFFFFFF;     // mask all interrupts
+    irq_reg->disable_2 = 0xFFFFFFFF;     // mask all interrupts
+    irq_reg->disable_basic = 0xFFFFFFFF; // mask all interrupts
+    enable_interrupts();
 }
 
-void mask(uint32_t irq)
+static void bcm2835_interrupt_mask(uint32_t irq)
 {
     if (IRQ_GPU_1(irq))
     {
@@ -25,7 +26,7 @@ void mask(uint32_t irq)
     }
 }
 
-void unmask(uint32_t irq)
+static void bcm2835_interrupt_unmask(uint32_t irq)
 {
     if (IRQ_GPU_1(irq))
     {
@@ -37,19 +38,19 @@ void unmask(uint32_t irq)
     }
 }
 
-static irq_value_t get_irq(void *ctx)
+static irq_value_t bcm2835_interrupt_get_irq(void *ctx)
 {
     uint8_t irq;
     for (irq = 0; irq < NUM_INTERRUPTS; irq++)
     {
         uint8_t irq_bit = irq % 32;
 
-        if (irq_reg->pending_1 & (1 << irq_bit))
+        if (IRQ_GPU_1(irq) && (irq_reg->pending_1 & (1 << irq_bit)))
         {
             irq_reg->pending_1 &= ~(1 << irq_bit);
             return irq;
         }
-        else if (irq_reg->pending_2 & (1 << irq_bit))
+        else if (IRQ_GPU_2(irq) && (irq_reg->pending_2 & (1 << irq_bit)))
         {
             irq_reg->pending_2 &= ~(1 << irq_bit);
             return irq;
@@ -59,10 +60,11 @@ static irq_value_t get_irq(void *ctx)
     return 0;
 }
 
-static kernel_interrupt_device_t interrupt_manager = {
-    .mask = mask,
-    .unmask = unmask,
-    .get_irq = get_irq,
+static kernel_interrupt_device_t interrupt_manager __attribute__((__section__("__interrupt_devices"))) = {
+    .init = bcm2835_interrupt_init,
+    .mask = bcm2835_interrupt_mask,
+    .unmask = bcm2835_interrupt_unmask,
+    .get_irq = bcm2835_interrupt_get_irq,
 };
 
 kernel_interrupt_device_t *init_bcm_2835_interrupt(uint32_t base)

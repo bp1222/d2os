@@ -2,7 +2,7 @@
 #define __TASK_H__
 #include <stddef.h>
 
-#include <asm/task.h>
+#include <arch/task.h>
 
 typedef enum
 {

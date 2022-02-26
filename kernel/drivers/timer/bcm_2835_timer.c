@@ -10,7 +10,7 @@
 
 static volatile timer_registers_t *system_timer;
 
-#define TICK 100000
+#define TICK 0x100000
 
 void schedule_next_timer(uint32_t time)
 {

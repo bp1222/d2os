@@ -6,6 +6,7 @@ set(ARCH_KERNEL_TARGET ${PROJECT_NAME})
 
 set(ARCH_KERNEL_C_SOURCES 
   main.c
+  memory.c
   mmio.c
   atags/atags.c
 )

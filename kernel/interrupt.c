@@ -13,7 +13,8 @@ void set_interrupt_handler(irq_value_t irq, interrupt_handler_t handler)
     interrupt_manager->unmask(irq);
 }
 
-interrupt_handler_t get_interrupt_handler(irq_value_t irq) {
+interrupt_handler_t get_interrupt_handler(irq_value_t irq)
+{
     return handlers[irq];
 }
 
@@ -23,16 +24,21 @@ void remove_interrupt_handler(irq_value_t irq)
     interrupt_manager->mask(irq);
 }
 
-void set_kernel_interrupt_device(kernel_interrupt_device_t *manager) {
+void set_kernel_interrupt_device(kernel_interrupt_device_t *manager)
+{
     interrupt_manager = manager;
+    manager->init();
 }
 
-void kernel_irq_handler(irq_value_t irq, void *ctx) {
-    if (interrupt_manager == NULL) {
+void kernel_irq_handler(irq_value_t irq, void *ctx)
+{
+    if (interrupt_manager == NULL)
+    {
         panic();
     }
 
-    if (handlers[irq] != NULL) {
+    if (handlers[irq] != NULL)
+    {
         handlers[irq](irq, ctx);
     }
 }

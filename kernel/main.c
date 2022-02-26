@@ -34,47 +34,15 @@ void __attribute__((noreturn)) kernel_main(const char *cmdline)
     init_printk(NULL, kernel_write);
     printk("Welcome to D2os!\n\r\n\r");
     printk("SVC Stack: 0x%x (Len: 0x%x)\n", &__svc_stack_top_core0, &__svc_stack_size);
+
     memory_init();
-    enable_interrupts();
 
     create_kernel_task(idle_task, NULL);
 
     schedule();
 
-    /*
-    uart_init();
-
-    printk("Welcome to D2os!\n\r\n\r");
-    printk("Boot Args: r0 = %x, r1 = %x, atags = %x\n", (uint32_t *)r0, (uint32_t *)r1, (uint32_t *)atags);
-    atags_dump((uint32_t *)atags);
-
-    memory_init();
-
-    mmu_init();
-
-    vfp_init();
-
-    timer_init(INTERRUPT_TIMER1);
-
-    smp_boot();
-
-    init_userspace();
-    exec_process(p);
-
-    int y = 0;
     while (1)
-    {
-        printk("NOPE 0x%x\n", y++);
-        asm volatile("wfi");
-    }
-    */
-
-    while (1)
-    {
-        volatile register uint32_t sp asm("sp");
-        printk("Loop: 0x%x\n", sp);
-        asm volatile("wfi");
-    }
+        ;
 }
 
 void delay(int count)

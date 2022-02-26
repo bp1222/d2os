@@ -64,7 +64,7 @@ typedef struct
 #define UART0_ICR_TXIC (1 << 5)
 #define UART0_ICR_RXIC (1 << 4)
 #define UART0_ICR_CTSMIC (1 << 1)
-#define UART0_ICR_ALL 0xF7ff
+#define UART0_ICR_ALL 0xF7FF
 
 #define UART0_IMSC_OEIM (1 << 10)
 #define UART0_IMSC_BEIM (1 << 9)

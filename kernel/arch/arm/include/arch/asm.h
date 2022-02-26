@@ -4,7 +4,7 @@
 #ifdef __ASSEMBLER__
 
 // Special Offset Values
-#define CPU_CONTEXT_SIZE (17 * 4)
+#define CPU_CONTEXT_SIZE (15 * 4)
 #define C_R0 (0 * 4)
 #define C_R1 (1 * 4)
 #define C_R2 (2 * 4)
@@ -41,8 +41,6 @@
 // See ARM section B3.3
 // The value can be decoded into constituent parts but can be gathered easily by running
 // cat /proc/cpuinfo when booting any of the RPi boards into Linux
-#define MAINID_ARMV6 0x410FB767
-#define MAINID_ARMV7 0x410FC073
 
 // Register Helpers
 #define MIDR(reg) p15, 0, reg, c0, c0, 0

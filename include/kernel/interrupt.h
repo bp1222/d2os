@@ -12,6 +12,7 @@ void remove_interrupt_handler(irq_value_t irq);
 
 typedef struct
 {
+    void (*init)();
     void (*mask)(irq_value_t irq);
     void (*unmask)(irq_value_t irq);
     irq_value_t (*get_irq)(void *ctx);
@@ -21,6 +22,8 @@ void set_kernel_interrupt_device(kernel_interrupt_device_t *manager);
 
 // Entry Point from ASM
 void kernel_irq_handler(uint32_t irq, void *ctx);
+
+void interrupt_init();
 
 void arch_enable_interrupts();
 void arch_disable_interrupts();

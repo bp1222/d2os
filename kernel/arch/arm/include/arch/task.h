@@ -14,9 +14,8 @@ typedef struct
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
-    uint32_t r12;
     uint32_t sp;
-    uint32_t pc; // Stored as PC, loaded as LR
+    uint32_t lr;
 } cpu_context_t;
 
 // This is representation of stored registers on the stack on interrupt entry
@@ -35,10 +34,8 @@ typedef struct
     uint32_t r10;
     uint32_t r11;
     uint32_t r12;
-    uint32_t sp;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t spsr;
+    uint32_t pc;   // irq_lr
+    uint32_t spsr; // irq_spsr
 } kernel_task_registers_t;
 
 #define INIT_CPU_CONTEXT \
@@ -52,9 +49,8 @@ typedef struct
         .r9 = 0,         \
         .r10 = 0,        \
         .r11 = 0,        \
-        .r12 = 0,        \
         .sp = 0,         \
-        .pc = 0          \
+        .lr = 0          \
     }
 
 #endif

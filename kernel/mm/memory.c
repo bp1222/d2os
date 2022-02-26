@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <arch/mmu.h>
+
 #include <kernel/kernel.h>
 #include <kernel/mutex.h>
 #include <kernel/mm/memory.h>
@@ -34,7 +36,7 @@ static mutex_t memory_mutex;
 
 void hexstrings(unsigned int d)
 {
-    //unsigned int ra;
+    // unsigned int ra;
     unsigned int rb;
     unsigned int rc;
 
@@ -135,6 +137,9 @@ void memory_init()
            RESERVED_KERNEL / 1024,
            memory_kernel / 1024,
            memory_total / PAGE_SIZE / 1024 / 32);
+
+    arch_pagetable_init(0, memory_total, RESERVED_KERNEL);
+    arch_mmu_init();
 }
 
 void *kmalloc(uint32_t size, memory_type_t type)

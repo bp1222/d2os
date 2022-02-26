@@ -53,6 +53,7 @@ static void set_pull(gpio_pin_t pin, gpio_pull_t pull)
 
     gpio_reg->GPPUD = pull;
     delay(150);
+
     *gppudclk |= pin % 32;
     delay(150);
 
@@ -62,7 +63,6 @@ static void set_pull(gpio_pin_t pin, gpio_pull_t pull)
 
 static void set_edge(gpio_pin_t pin, gpio_edge_t edge)
 {
-
 }
 
 static kernel_gpio_device_t gpio_device = {
@@ -71,7 +71,8 @@ static kernel_gpio_device_t gpio_device = {
     .set_edge = set_edge,
 };
 
-void init_bcm_2835_gpio(uint32_t peripheral_base) {
+void init_bcm_2835_gpio(uint32_t peripheral_base)
+{
     gpio_reg = (gpio_registers_t *)(peripheral_base + GPIO_OFFSET);
     gpio_init(&gpio_device);
 }
